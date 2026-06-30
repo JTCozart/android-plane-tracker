@@ -1,10 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- simple airplane glyph centered in the adaptive safe zone -->
+
+    <!-- radar rings (center 54,54) -->
+    <path
+        android:strokeColor="#00e676"
+        android:strokeWidth="0.7"
+        android:strokeAlpha="0.35"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M4,54 A50,50 0 1,1 104,54 A50,50 0 1,1 4,54 Z"/>
+    <path
+        android:strokeColor="#00e676"
+        android:strokeWidth="0.8"
+        android:strokeAlpha="0.5"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M18,54 A36,36 0 1,1 90,54 A36,36 0 1,1 18,54 Z"/>
+    <path
+        android:strokeColor="#00e676"
+        android:strokeWidth="0.9"
+        android:strokeAlpha="0.65"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M32,54 A22,22 0 1,1 76,54 A22,22 0 1,1 32,54 Z"/>
+
+    <!-- crosshairs -->
+    <path
+        android:strokeColor="#00e676"
+        android:strokeWidth="0.5"
+        android:strokeAlpha="0.2"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M4,54 L104,54"/>
+    <path
+        android:strokeColor="#00e676"
+        android:strokeWidth="0.5"
+        android:strokeAlpha="0.2"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M54,4 L54,104"/>
+
+    <!-- radar sweep wedge -->
+    <path
+        android:fillColor="#00e676"
+        android:fillAlpha="0.07"
+        android:pathData="M54,54 L104,54 A50,50 0 0,0 89,19 Z"/>
+    <path
+        android:strokeColor="#00e676"
+        android:strokeWidth="0.8"
+        android:strokeAlpha="0.35"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M54,54 L89,19"/>
+
+    <!-- airplane glyph -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M54,30 L58,54 L78,66 L78,72 L56,66 L56,80 L62,84 L62,88 L54,86 L46,88 L46,84 L52,80 L52,66 L30,72 L30,66 L50,54 Z" />
+        android:pathData="M54,30 L58,54 L78,66 L78,72 L56,66 L56,80 L62,84 L62,88 L54,86 L46,88 L46,84 L52,80 L52,66 L30,72 L30,66 L50,54 Z"/>
 </vector>
