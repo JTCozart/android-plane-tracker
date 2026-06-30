@@ -13,12 +13,12 @@ val keystoreProps = Properties().also { props ->
 
 android {
     namespace = "com.jtcozart.planetracker"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.jtcozart.planetracker"
         minSdk = 26          // Android 8.0 — notification channels, foreground services
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
     }
