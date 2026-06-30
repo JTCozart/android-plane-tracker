@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- simple airplane glyph centered in the adaptive safe zone -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,30 L58,54 L78,66 L78,72 L56,66 L56,80 L62,84 L62,88 L54,86 L46,88 L46,84 L52,80 L52,66 L30,72 L30,66 L50,54 Z" />
+</vector>
