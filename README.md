@@ -1,5 +1,7 @@
 # android-plane-tracker
 
+[![AI Assisted Badge](https://www.aihonestybadge.com/badges/ai-assisted.svg)](https://www.aihonestybadge.com)
+
 A native Android app that tracks aircraft flying within a configurable radius of **your phone's current location**, using the free, key-less [adsb.lol](https://adsb.lol) ADS-B feed. It's a port of the [atom-plane-tracker](../atom-plane-tracker) M5Stack Atom S3R firmware, with two deliberate platform swaps:
 
 - **Live GPS** replaces the firmware's fixed coordinate — the scan radius follows you as you move.
