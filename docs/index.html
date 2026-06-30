@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PlaneTracker — Live Aircraft Radar for Android</title>
+  <meta name="description" content="PlaneTracker shows every aircraft flying within your chosen radius using live ADS-B data. Radar scope, live map, and instant notifications." />
+  <style>
+    :root {
+      --bg:       #0d0d0d;
+      --surface:  #1a1a1a;
+      --card:     #222222;
+      --green:    #00e676;
+      --green-dim:#00c853;
+      --red:      #ef5350;
+      --blue:     #42a5f5;
+      --yellow:   #ffee58;
+      --text:     #f0f0f0;
+      --muted:    #888;
+      --radius:   14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+    }
+
+    /* NAV */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 40px;
+      border-bottom: 1px solid #222;
+      position: sticky;
+      top: 0;
+      background: rgba(13,13,13,0.92);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--green);
+      text-decoration: none;
+    }
+    .nav-logo svg { width: 26px; height: 26px; }
+    nav a { color: var(--muted); text-decoration: none; font-size: .9rem; }
+    nav a:hover { color: var(--text); }
+
+    /* HERO */
+    .hero {
+      text-align: center;
+      padding: 80px 24px 60px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .hero-tag {
+      display: inline-block;
+      background: rgba(0,230,118,.12);
+      color: var(--green);
+      border: 1px solid rgba(0,230,118,.3);
+      border-radius: 100px;
+      padding: 4px 14px;
+      font-size: .8rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: clamp(2.2rem, 6vw, 3.6rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 20px;
+    }
+    h1 span { color: var(--green); }
+    .hero p {
+      color: var(--muted);
+      font-size: 1.1rem;
+      max-width: 560px;
+      margin: 0 auto 36px;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn-play {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--green);
+      color: #000;
+      font-weight: 700;
+      font-size: .95rem;
+      padding: 13px 26px;
+      border-radius: var(--radius);
+      text-decoration: none;
+      transition: background .2s;
+    }
+    .btn-play:hover { background: var(--green-dim); }
+    .btn-play svg { width: 22px; height: 22px; }
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #333;
+      color: var(--text);
+      font-size: .95rem;
+      padding: 13px 26px;
+      border-radius: var(--radius);
+      text-decoration: none;
+      transition: border-color .2s;
+    }
+    .btn-ghost:hover { border-color: var(--green); color: var(--green); }
+
+    /* SCREENSHOTS */
+    .screenshots {
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+      padding: 60px 24px;
+      flex-wrap: wrap;
+    }
+    .phone {
+      width: 200px;
+      flex-shrink: 0;
+      filter: drop-shadow(0 20px 60px rgba(0,230,118,.15));
+    }
+
+    /* FEATURES */
+    .features {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px 24px 80px;
+    }
+    .features h2 {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 40px;
+    }
+    .features h2 span { color: var(--green); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+    .feat {
+      background: var(--card);
+      border: 1px solid #2a2a2a;
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    .feat-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(0,230,118,.1);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+    .feat-icon svg { width: 22px; height: 22px; stroke: var(--green); fill: none; stroke-width: 2; }
+    .feat h3 { font-size: 1rem; margin-bottom: 6px; }
+    .feat p { color: var(--muted); font-size: .88rem; }
+
+    /* CLASSES */
+    .classes {
+      background: var(--surface);
+      padding: 60px 24px;
+    }
+    .classes-inner {
+      max-width: 700px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .classes h2 { font-size: 1.8rem; margin-bottom: 10px; }
+    .classes h2 span { color: var(--green); }
+    .classes .sub { color: var(--muted); margin-bottom: 36px; }
+    .class-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      text-align: left;
+    }
+    .class-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-left: 4px solid;
+    }
+    .class-card.mil  { border-color: var(--red); }
+    .class-card.med  { border-color: var(--blue); }
+    .class-card.com  { border-color: var(--green); }
+    .class-card.priv { border-color: var(--yellow); }
+    .dot {
+      width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+    }
+    .dot.mil  { background: var(--red); }
+    .dot.med  { background: var(--blue); }
+    .dot.com  { background: var(--green); }
+    .dot.priv { background: var(--yellow); }
+    .class-card div { }
+    .class-card strong { display: block; font-size: .95rem; }
+    .class-card span { color: var(--muted); font-size: .82rem; }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid #222;
+      padding: 32px 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: .85rem;
+    }
+    footer a { color: var(--muted); text-decoration: underline; }
+    footer a:hover { color: var(--green); }
+    footer p + p { margin-top: 8px; }
+
+    @media (max-width: 600px) {
+      nav { padding: 14px 20px; }
+      .class-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="index.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/>
+    </svg>
+    PlaneTracker
+  </a>
+  <a href="privacy.html">Privacy Policy</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-tag">Free &amp; Open Source</div>
+  <h1>Every aircraft<br /><span>above you</span>, live.</h1>
+  <p>PlaneTracker shows aircraft flying within your chosen radius using live ADS-B data — radar scope, live map, and instant notifications, all on-device.</p>
+  <div class="hero-actions">
+    <a class="btn-play" href="#" id="play-link">
+      <!-- Google Play icon -->
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.76c.37.21.8.22 1.19.04L16.91 12 4.37.2C3.98.02 3.55.03 3.18.24 2.8.46 2.57.88 2.57 1.37v21.26c0 .49.23.91.61 1.13z"/><path d="M20.43 10.18l-2.9-1.66-3.19 3.48 3.19 3.48 2.92-1.67c.83-.48.83-1.15-.02-1.63z"/><path d="M4.37.2l12.54 11.8L5.37 23.8z" opacity=".6"/><path d="M4.37.2 16.91 12 5.37.4z" opacity=".4"/></svg>
+      Coming Soon on Google Play
+    </a>
+    <a class="btn-ghost" href="https://github.com/JTCozart/android-plane-tracker" target="_blank" rel="noopener">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      View Source
+    </a>
+  </div>
+</section>
+
+<!-- SCREENSHOTS -->
+<section class="screenshots">
+
+  <!-- Phone 1: Live screen -->
+  <svg class="phone" viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="400" rx="24" fill="#1a1a1a" stroke="#333" stroke-width="1.5"/>
+    <!-- notch -->
+    <rect x="70" y="6" width="60" height="10" rx="5" fill="#0d0d0d"/>
+    <!-- top bar -->
+    <rect x="0" y="22" width="200" height="32" fill="#222"/>
+    <text x="12" y="42" font-family="sans-serif" font-size="12" font-weight="700" fill="#f0f0f0">PlaneTracker</text>
+    <text x="150" y="42" font-family="sans-serif" font-size="10" fill="#888">Live</text>
+    <!-- aircraft cards -->
+    <!-- card 1 military red -->
+    <rect x="10" y="62" width="180" height="52" rx="8" fill="#2a1a1a" stroke="#ef5350" stroke-width="1"/>
+    <rect x="10" y="62" width="4" height="52" rx="2" fill="#ef5350"/>
+    <text x="22" y="79" font-family="monospace" font-size="9" font-weight="700" fill="#ef5350">REACH712</text>
+    <text x="22" y="93" font-family="sans-serif" font-size="8" fill="#aaa">C-17 Globemaster · 28,000 ft</text>
+    <text x="22" y="107" font-family="sans-serif" font-size="8" fill="#888">18.4 NM · NW · ETA 4m32s</text>
+    <rect x="155" y="71" width="28" height="14" rx="4" fill="rgba(239,83,80,.15)" stroke="#ef5350" stroke-width=".5"/>
+    <text x="169" y="81" text-anchor="middle" font-family="sans-serif" font-size="7" fill="#ef5350">MIL</text>
+    <!-- card 2 blue medevac -->
+    <rect x="10" y="122" width="180" height="52" rx="8" fill="#1a1e2a" stroke="#42a5f5" stroke-width="1"/>
+    <rect x="10" y="122" width="4" height="52" rx="2" fill="#42a5f5"/>
+    <text x="22" y="139" font-family="monospace" font-size="9" font-weight="700" fill="#42a5f5">LIFE23</text>
+    <text x="22" y="153" font-family="sans-serif" font-size="8" fill="#aaa">AW139 · 1,800 ft</text>
+    <text x="22" y="167" font-family="sans-serif" font-size="8" fill="#888">3.1 NM · SE · ETA 1m18s</text>
+    <rect x="143" y="131" width="40" height="14" rx="4" fill="rgba(66,165,245,.15)" stroke="#42a5f5" stroke-width=".5"/>
+    <text x="163" y="141" text-anchor="middle" font-family="sans-serif" font-size="7" fill="#42a5f5">MEDEVAC</text>
+    <!-- card 3 green commercial -->
+    <rect x="10" y="182" width="180" height="52" rx="8" fill="#1a2a1e" stroke="#00e676" stroke-width="1"/>
+    <rect x="10" y="182" width="4" height="52" rx="2" fill="#00e676"/>
+    <text x="22" y="199" font-family="monospace" font-size="9" font-weight="700" fill="#00e676">UAL487</text>
+    <text x="22" y="213" font-family="sans-serif" font-size="8" fill="#aaa">Boeing 737 · 35,000 ft</text>
+    <text x="22" y="227" font-family="sans-serif" font-size="8" fill="#888">12.7 NM · NE · ETA 6m02s</text>
+    <rect x="143" y="191" width="40" height="14" rx="4" fill="rgba(0,230,118,.1)" stroke="#00e676" stroke-width=".5"/>
+    <text x="163" y="201" text-anchor="middle" font-family="sans-serif" font-size="7" fill="#00e676">COMRCL</text>
+    <!-- card 4 yellow private -->
+    <rect x="10" y="242" width="180" height="52" rx="8" fill="#2a2a1a" stroke="#ffee58" stroke-width="1"/>
+    <rect x="10" y="242" width="4" height="52" rx="2" fill="#ffee58"/>
+    <text x="22" y="259" font-family="monospace" font-size="9" font-weight="700" fill="#ffee58">N8847K</text>
+    <text x="22" y="273" font-family="sans-serif" font-size="8" fill="#aaa">Cessna 172 · 4,500 ft</text>
+    <text x="22" y="287" font-family="sans-serif" font-size="8" fill="#888">6.2 NM · SW · ETA 8m11s</text>
+    <rect x="143" y="251" width="40" height="14" rx="4" fill="rgba(255,238,88,.1)" stroke="#ffee58" stroke-width=".5"/>
+    <text x="163" y="261" text-anchor="middle" font-family="sans-serif" font-size="7" fill="#ffee58">PRIVATE</text>
+    <!-- bottom nav -->
+    <rect x="0" y="368" width="200" height="32" fill="#222"/>
+    <text x="22" y="388" font-family="sans-serif" font-size="8" fill="#00e676">● Live</text>
+    <text x="68" y="388" font-family="sans-serif" font-size="8" fill="#666">Radar</text>
+    <text x="106" y="388" font-family="sans-serif" font-size="8" fill="#666">History</text>
+    <text x="148" y="388" font-family="sans-serif" font-size="8" fill="#666">Settings</text>
+    <!-- label -->
+    <text x="100" y="356" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#555">LIVE VIEW</text>
+  </svg>
+
+  <!-- Phone 2: Radar scope -->
+  <svg class="phone" viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="400" rx="24" fill="#1a1a1a" stroke="#333" stroke-width="1.5"/>
+    <rect x="70" y="6" width="60" height="10" rx="5" fill="#0d0d0d"/>
+    <rect x="0" y="22" width="200" height="32" fill="#222"/>
+    <text x="12" y="42" font-family="sans-serif" font-size="12" font-weight="700" fill="#f0f0f0">PlaneTracker</text>
+    <!-- top bar icons -->
+    <text x="138" y="42" font-family="sans-serif" font-size="8" fill="#00e676">◉ Radar</text>
+    <text x="172" y="42" font-family="sans-serif" font-size="8" fill="#666">Map</text>
+    <!-- radar scope bg -->
+    <rect x="10" y="60" width="180" height="180" rx="10" fill="#0d0d0d"/>
+    <!-- rings -->
+    <circle cx="100" cy="150" r="80" fill="none" stroke="#1a3322" stroke-width="1"/>
+    <circle cx="100" cy="150" r="55" fill="none" stroke="#1a3322" stroke-width="1"/>
+    <circle cx="100" cy="150" r="30" fill="none" stroke="#1a3322" stroke-width="1"/>
+    <!-- crosshairs -->
+    <line x1="20" y1="150" x2="180" y2="150" stroke="#1a3322" stroke-width=".8"/>
+    <line x1="100" y1="70" x2="100" y2="230" stroke="#1a3322" stroke-width=".8"/>
+    <!-- sweep wedge -->
+    <path d="M100,150 L180,150 A80,80 0 0,0 148,82 Z" fill="rgba(0,230,118,0.07)"/>
+    <line x1="100" y1="150" x2="148" y2="82" stroke="#00e676" stroke-width="1.2" stroke-dasharray="2,2" opacity=".6"/>
+    <!-- sweep arc -->
+    <path d="M180,150 A80,80 0 0,0 148,82" fill="none" stroke="rgba(0,230,118,0.3)" stroke-width="1"/>
+    <!-- center dot (you) -->
+    <circle cx="100" cy="150" r="4" fill="#42a5f5"/>
+    <circle cx="100" cy="150" r="7" fill="none" stroke="#42a5f5" stroke-width="1" opacity=".4"/>
+    <!-- aircraft triangles -->
+    <!-- military NW -->
+    <polygon points="72,98 69,106 75,106" fill="#ef5350" transform="rotate(-45,72,102)"/>
+    <!-- commercial NE -->
+    <polygon points="148,105 145,113 151,113" fill="#00e676" transform="rotate(60,148,109)"/>
+    <!-- private SW -->
+    <polygon points="58,178 55,186 61,186" fill="#ffee58" transform="rotate(210,58,182)"/>
+    <!-- medevac SE -->
+    <polygon points="138,188 135,196 141,196" fill="#42a5f5" transform="rotate(145,138,192)"/>
+    <!-- count label -->
+    <text x="100" y="255" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#666">4 overhead · 5 NM range</text>
+    <!-- bottom nav -->
+    <rect x="0" y="368" width="200" height="32" fill="#222"/>
+    <text x="22" y="388" font-family="sans-serif" font-size="8" fill="#666">Live</text>
+    <text x="58" y="388" font-family="sans-serif" font-size="8" fill="#00e676">● Radar</text>
+    <text x="106" y="388" font-family="sans-serif" font-size="8" fill="#666">History</text>
+    <text x="148" y="388" font-family="sans-serif" font-size="8" fill="#666">Settings</text>
+    <text x="100" y="356" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#555">RADAR SCOPE</text>
+  </svg>
+
+  <!-- Phone 3: Map view -->
+  <svg class="phone" viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="400" rx="24" fill="#1a1a1a" stroke="#333" stroke-width="1.5"/>
+    <rect x="70" y="6" width="60" height="10" rx="5" fill="#0d0d0d"/>
+    <rect x="0" y="22" width="200" height="32" fill="#222"/>
+    <text x="12" y="42" font-family="sans-serif" font-size="12" font-weight="700" fill="#f0f0f0">PlaneTracker</text>
+    <text x="138" y="42" font-family="sans-serif" font-size="8" fill="#666">Radar</text>
+    <text x="166" y="42" font-family="sans-serif" font-size="8" fill="#00e676">◉ Map</text>
+    <!-- map background tiles (simplified grid) -->
+    <rect x="0" y="54" width="200" height="314" fill="#2c3e30" rx="0"/>
+    <!-- road grid -->
+    <line x1="0" y1="120" x2="200" y2="120" stroke="#3a4f3a" stroke-width="4"/>
+    <line x1="0" y1="200" x2="200" y2="200" stroke="#3a4f3a" stroke-width="4"/>
+    <line x1="0" y1="280" x2="200" y2="280" stroke="#3a4f3a" stroke-width="2"/>
+    <line x1="60" y1="54" x2="60" y2="368" stroke="#3a4f3a" stroke-width="2"/>
+    <line x1="130" y1="54" x2="130" y2="368" stroke="#3a4f3a" stroke-width="4"/>
+    <!-- blocks -->
+    <rect x="62" y="122" width="66" height="76" rx="2" fill="#354535"/>
+    <rect x="132" y="122" width="50" height="36" rx="2" fill="#354535"/>
+    <rect x="62" y="202" width="30" height="46" rx="2" fill="#354535"/>
+    <rect x="96" y="202" width="32" height="46" rx="2" fill="#354535"/>
+    <rect x="132" y="202" width="50" height="46" rx="2" fill="#354535"/>
+    <rect x="0" y="122" width="58" height="36" rx="2" fill="#354535"/>
+    <rect x="0" y="282" width="58" height="60" rx="2" fill="#354535"/>
+    <rect x="62" y="282" width="66" height="60" rx="2" fill="#354535"/>
+    <rect x="132" y="282" width="50" height="60" rx="2" fill="#354535"/>
+    <!-- scan radius circle -->
+    <circle cx="100" cy="200" r="72" fill="rgba(0,230,118,.08)" stroke="#00e676" stroke-width="1.5"/>
+    <!-- you marker -->
+    <circle cx="100" cy="200" r="6" fill="#42a5f5" stroke="#fff" stroke-width="1.5"/>
+    <!-- aircraft dots -->
+    <circle cx="62" cy="147" r="5" fill="#ef5350" stroke="#000" stroke-width="1"/>
+    <circle cx="148" cy="165" r="5" fill="#00e676" stroke="#000" stroke-width="1"/>
+    <circle cx="72" cy="245" r="5" fill="#ffee58" stroke="#000" stroke-width="1"/>
+    <circle cx="148" cy="255" r="5" fill="#42a5f5" stroke="#000" stroke-width="1"/>
+    <!-- osm attribution (realistic detail) -->
+    <rect x="0" y="358" width="200" height="10" fill="rgba(0,0,0,.5)"/>
+    <text x="4" y="366" font-family="sans-serif" font-size="6" fill="#aaa">© OpenStreetMap contributors</text>
+    <!-- bottom nav -->
+    <rect x="0" y="368" width="200" height="32" fill="#222"/>
+    <text x="22" y="388" font-family="sans-serif" font-size="8" fill="#666">Live</text>
+    <text x="58" y="388" font-family="sans-serif" font-size="8" fill="#00e676">● Radar</text>
+    <text x="106" y="388" font-family="sans-serif" font-size="8" fill="#666">History</text>
+    <text x="148" y="388" font-family="sans-serif" font-size="8" fill="#666">Settings</text>
+    <text x="100" y="356" text-anchor="middle" font-family="sans-serif" font-size="0" fill="#555">MAP VIEW</text>
+  </svg>
+
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+  <h2>Everything you need. <span>Nothing you don't.</span></h2>
+  <div class="grid">
+    <div class="feat">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <h3>Live ADS-B Data</h3>
+      <p>Polls adsb.lol every 10 seconds. No API key, no account — works out of the box.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      </div>
+      <h3>Follows You</h3>
+      <p>Your scan radius moves with your GPS position. Lock it in place with one tap when you need it.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </div>
+      <h3>Instant Notifications</h3>
+      <p>Get alerted the moment an aircraft enters your radius. Emergency squawks get their own priority channel.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+      </div>
+      <h3>Radar &amp; Map Views</h3>
+      <p>A classic top-down radar scope and a live OpenStreetMap view with your scan circle overlaid.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </div>
+      <h3>Flight Tracking</h3>
+      <p>Tap any aircraft to open its live flight path on ADS-B Exchange. Follow it anywhere.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <h3>Fully On-Device</h3>
+      <p>No backend, no account, no data collection. Your location never leaves your phone.</p>
+    </div>
+  </div>
+</section>
+
+<!-- AIRCRAFT CLASSES -->
+<section class="classes">
+  <div class="classes-inner">
+    <h2>Classified by <span>type</span></h2>
+    <p class="sub">Every aircraft is color-coded so you know what you're looking at at a glance.</p>
+    <div class="class-grid">
+      <div class="class-card mil">
+        <div class="dot mil"></div>
+        <div>
+          <strong>Military</strong>
+          <span>USAF / DoD mil flag or dbFlags bit 0</span>
+        </div>
+      </div>
+      <div class="class-card med">
+        <div class="dot med"></div>
+        <div>
+          <strong>Medevac</strong>
+          <span>LIFEGUARD / MEDVAC / REACH callsigns or known EMS operators</span>
+        </div>
+      </div>
+      <div class="class-card com">
+        <div class="dot com"></div>
+        <div>
+          <strong>Commercial</strong>
+          <span>ADS-B category A3–A5 or ICAO airline callsign pattern</span>
+        </div>
+      </div>
+      <div class="class-card priv">
+        <div class="dot priv"></div>
+        <div>
+          <strong>Private / Other</strong>
+          <span>Everything else — GA, helicopter, unknown</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>
+    <a href="https://github.com/JTCozart/android-plane-tracker" target="_blank" rel="noopener">GitHub</a>
+    &nbsp;·&nbsp;
+    <a href="privacy.html">Privacy Policy</a>
+    &nbsp;·&nbsp;
+    Aircraft data from <a href="https://adsb.lol" target="_blank" rel="noopener">adsb.lol</a>
+  </p>
+  <p style="margin-top:12px;">
+    <a href="https://www.aihonestybadge.com" target="_blank" rel="noopener">
+      <img src="https://www.aihonestybadge.com/badges/ai-assisted.svg" alt="AI Assisted Badge" style="height:28px;vertical-align:middle;" />
+    </a>
+  </p>
+  <p style="margin-top:12px;">© 2026 PlaneTracker. Free and open source.</p>
+</footer>
+
+</body>
+</html>
