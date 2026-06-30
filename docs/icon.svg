@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#1e2e1e"/>
+      <stop offset="100%" stop-color="#0d0d0d"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#00e676" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#00e676" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="planeglow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="ringglow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="round">
+      <rect width="512" height="512" rx="112" ry="112"/>
+    </clipPath>
+  </defs>
+
+  <!-- rounded square background -->
+  <rect width="512" height="512" rx="112" ry="112" fill="url(#bg)"/>
+
+  <!-- radial glow behind rings -->
+  <circle cx="256" cy="256" r="220" fill="url(#glow)"/>
+
+  <!-- radar rings -->
+  <g filter="url(#ringglow)" opacity="0.7">
+    <circle cx="256" cy="256" r="210" fill="none" stroke="#00e676" stroke-width="1.5" opacity="0.25"/>
+    <circle cx="256" cy="256" r="158" fill="none" stroke="#00e676" stroke-width="1.5" opacity="0.35"/>
+    <circle cx="256" cy="256" r="106" fill="none" stroke="#00e676" stroke-width="1.5" opacity="0.5"/>
+    <circle cx="256" cy="256" r="54"  fill="none" stroke="#00e676" stroke-width="1.5" opacity="0.7"/>
+  </g>
+
+  <!-- crosshair lines -->
+  <line x1="46"  y1="256" x2="466" y2="256" stroke="#00e676" stroke-width="1" opacity="0.18"/>
+  <line x1="256" y1="46"  x2="256" y2="466" stroke="#00e676" stroke-width="1" opacity="0.18"/>
+
+  <!-- radar sweep wedge -->
+  <path d="M256,256 L466,256 A210,210 0 0,0 404,107 Z"
+        fill="rgba(0,230,118,0.06)"/>
+  <line x1="256" y1="256" x2="404" y2="107"
+        stroke="#00e676" stroke-width="1.5" opacity="0.4" stroke-dasharray="6,4"/>
+
+  <!-- small blip dots -->
+  <circle cx="340" cy="148" r="5" fill="#ef5350" opacity="0.9"/>
+  <circle cx="172" cy="188" r="4" fill="#00e676" opacity="0.8"/>
+  <circle cx="310" cy="310" r="4" fill="#ffee58" opacity="0.7"/>
+
+  <!-- airplane glyph (scaled from 108dp viewport to ~260px centered) -->
+  <!-- original path in 108-unit space, scaled ~2.4x and centered on 256,256 -->
+  <g transform="translate(256,256) scale(2.55) translate(-54,-59)" filter="url(#planeglow)">
+    <path d="M54,30 L58,54 L78,66 L78,72 L56,66 L56,80 L62,84 L62,88 L54,86 L46,88 L46,84 L52,80 L52,66 L30,72 L30,66 L50,54 Z"
+          fill="#ffffff"/>
+  </g>
+
+  <!-- subtle vignette -->
+  <rect width="512" height="512" rx="112" ry="112"
+        fill="url(#bg)" opacity="0.15"/>
+</svg>
