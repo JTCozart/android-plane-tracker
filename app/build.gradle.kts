@@ -19,7 +19,7 @@ android {
         applicationId = "com.jtcozart.planetracker"
         minSdk = 26          // Android 8.0 — notification channels, foreground services
         targetSdk = 35
-        versionCode = 1
+        versionCode = 2
         versionName = "1.0.0"
     }
 
