@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.jtcozart.planetracker.data.HistoryRepository
 import com.jtcozart.planetracker.data.OnboardingRepository
+import com.jtcozart.planetracker.data.ReviewPromptRepository
 import com.jtcozart.planetracker.data.Settings
 import com.jtcozart.planetracker.data.SettingsRepository
 import com.jtcozart.planetracker.data.TrackerState
@@ -21,7 +22,12 @@ class TrackerViewModel(app: Application) : AndroidViewModel(app) {
     private val settingsRepo = SettingsRepository(app)
     private val historyRepo = HistoryRepository(app)
     private val onboardingRepo = OnboardingRepository(app)
+    private val reviewPromptRepo = ReviewPromptRepository(app)
     private val notifier = Notifier(app)
+
+    init {
+        viewModelScope.launch { reviewPromptRepo.recordFirstLaunchIfNeeded() }
+    }
 
     val state: StateFlow<TrackerState> = TrackerStateHolder.state
 
@@ -43,6 +49,16 @@ class TrackerViewModel(app: Application) : AndroidViewModel(app) {
 
     fun completeTutorial() {
         viewModelScope.launch { onboardingRepo.setTutorialCompleted() }
+    }
+
+    val shouldShowReviewPrompt: StateFlow<Boolean> = reviewPromptRepo.shouldShowPrompt.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = false,
+    )
+
+    fun dismissReviewPrompt() {
+        viewModelScope.launch { reviewPromptRepo.setPromptHandled() }
     }
 
     fun startTracking() = TrackingService.start(getApplication())

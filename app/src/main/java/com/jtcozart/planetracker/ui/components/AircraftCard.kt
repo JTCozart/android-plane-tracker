@@ -21,14 +21,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jtcozart.planetracker.model.Aircraft
-import com.jtcozart.planetracker.ui.openFlightTrack
 import com.jtcozart.planetracker.ui.theme.classColor
 import com.jtcozart.planetracker.ui.theme.classTextColor
 
@@ -40,8 +38,8 @@ fun AircraftCard(
     centerLon: Double,
     radiusNm: Float,
     modifier: Modifier = Modifier,
+    onClick: () -> Unit,
 ) {
-    val context = LocalContext.current
     val base = classColor(aircraft.classification)
     val text = classTextColor(aircraft.classification)
 
@@ -68,12 +66,12 @@ fun AircraftCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(bg)
-            .clickable { openFlightTrack(context, aircraft.icao) }
+            .clickable(onClick = onClick)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         val label = aircraft.callsign.ifEmpty { aircraft.registration.ifEmpty { aircraft.icao } }
-        // Underlined to signal it opens the live flight path on ADS-B Exchange.
+        // Underlined to signal it opens the flight detail popup.
         Text(
             label,
             color = text,

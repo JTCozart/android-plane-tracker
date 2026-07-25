@@ -19,8 +19,8 @@ android {
         applicationId = "com.jtcozart.planetracker"
         minSdk = 26          // Android 8.0 — notification channels, foreground services
         targetSdk = 36
-        versionCode = 9
-        versionName = "1.0.9"
+        versionCode = 11
+        versionName = "1.0.11"
     }
 
     signingConfigs {
@@ -86,6 +86,9 @@ dependencies {
 
     // AdMob banner ads
     implementation("com.google.android.gms:play-services-ads:23.6.0")
+
+    // Play In-App Review — native rating prompt, no Play Store redirect
+    implementation("com.google.android.play:review-ktx:2.0.2")
 
     // Networking for adsb.lol (JSON parsed with the built-in org.json)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

@@ -1,5 +1,6 @@
 package com.jtcozart.planetracker.data
 
+import com.jtcozart.planetracker.model.Aircraft
 import com.jtcozart.planetracker.model.AircraftClass
 
 enum class ThemeMode { SYSTEM, DARK, LIGHT }
@@ -40,6 +41,10 @@ data class Settings(
             AircraftClass.PRIVATE -> notifyPrivate
         }
     }
+
+    /** Whether this aircraft matches the active notification filters (used by the "notify matches only" display filter). */
+    fun notifiesAircraft(aircraft: Aircraft): Boolean =
+        aircraft.isEmergencySquawk || notifiesClass(aircraft.classification)
 
     companion object {
         const val DEFAULT_RADIUS_NM = 5.0f

@@ -17,12 +17,22 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
+import com.jtcozart.planetracker.data.Settings
 import com.jtcozart.planetracker.data.TrackerState
+import com.jtcozart.planetracker.model.Aircraft
 import com.jtcozart.planetracker.ui.components.AircraftCard
+import com.jtcozart.planetracker.ui.components.NotifyFilterToggle
 import com.jtcozart.planetracker.ui.components.RadarScope
 
 @Composable
-fun LiveScreen(state: TrackerState, modifier: Modifier = Modifier) {
+fun LiveScreen(
+    state: TrackerState,
+    settings: Settings,
+    showOnlyNotifyMatches: Boolean,
+    onShowOnlyNotifyMatchesChange: (Boolean) -> Unit,
+    onAircraftClick: (Aircraft) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     if (!state.hasLocation) {
         CenterStatus("Acquiring GPS location…", modifier)
         return
@@ -35,6 +45,11 @@ fun LiveScreen(state: TrackerState, modifier: Modifier = Modifier) {
         config.screenWidthDp.dp - 32.dp,
         config.screenHeightDp.dp * 0.55f,
     )
+    val visible = if (showOnlyNotifyMatches) {
+        state.active.filter { settings.notifiesAircraft(it) }
+    } else {
+        state.active
+    }
 
     LazyColumn(
         modifier = modifier.padding(horizontal = 16.dp),
@@ -44,24 +59,32 @@ fun LiveScreen(state: TrackerState, modifier: Modifier = Modifier) {
             Box(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
             RadarScope(
                 modifier = Modifier.size(radarSize),
-                aircraft = state.active,
+                aircraft = visible,
                 centerLat = lat,
                 centerLon = lon,
                 radiusNm = state.radiusNm,
                 running = state.running,
+                onAircraftClick = onAircraftClick,
             )
             }
         }
         item {
+            NotifyFilterToggle(
+                showOnlyNotifyMatches = showOnlyNotifyMatches,
+                onChange = onShowOnlyNotifyMatchesChange,
+                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+            )
+        }
+        item {
             Text(
-                "${state.active.size} overhead • ${state.radiusNm.toInt()} NM range",
+                "${visible.size} overhead • ${state.radiusNm.toInt()} NM range",
                 color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
             )
         }
-        items(state.active, key = { it.icao }) { ac ->
-            AircraftCard(ac, lat, lon, state.radiusNm)
+        items(visible, key = { it.icao }) { ac ->
+            AircraftCard(ac, lat, lon, state.radiusNm, onClick = { onAircraftClick(ac) })
         }
     }
 }

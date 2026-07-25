@@ -1,6 +1,11 @@
 package com.jtcozart.planetracker.ui
 
+import android.app.Activity
+import android.content.ContextWrapper
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import com.google.android.play.core.review.ReviewManagerFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
@@ -25,6 +30,7 @@ import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -69,13 +75,21 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jtcozart.planetracker.model.Aircraft
 import com.jtcozart.planetracker.ui.components.BannerAd
+import com.jtcozart.planetracker.ui.components.FlightDetailDialog
 import com.jtcozart.planetracker.ui.screens.HistoryScreen
 import com.jtcozart.planetracker.ui.screens.LiveScreen
 import com.jtcozart.planetracker.ui.screens.MapScreen
 import com.jtcozart.planetracker.ui.screens.SettingsScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+private tailrec fun android.content.Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
 
 private enum class Tab(val label: String, val icon: ImageVector) {
     LIVE("Live", Icons.Filled.Flight),
@@ -147,6 +161,7 @@ fun AppRoot(viewModel: TrackerViewModel, requiredPermissions: List<String>) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val tutorialCompleted by viewModel.tutorialCompleted.collectAsStateWithLifecycle()
+    val shouldShowReviewPrompt by viewModel.shouldShowReviewPrompt.collectAsStateWithLifecycle()
 
     fun hasLocation() = ContextCompat.checkSelfPermission(
         context, android.Manifest.permission.ACCESS_FINE_LOCATION
@@ -155,6 +170,8 @@ fun AppRoot(viewModel: TrackerViewModel, requiredPermissions: List<String>) {
     var locationGranted by remember { mutableStateOf(hasLocation()) }
     var currentTab by remember { mutableStateOf(Tab.LIVE) }
     var showClearConfirm by remember { mutableStateOf(false) }
+    var showOnlyNotifyMatches by remember { mutableStateOf(false) }
+    var selectedAircraftIcao by remember { mutableStateOf<String?>(null) }
     var tutorialStepIndex by remember { mutableStateOf(0) }
     val tutorialTargets = remember { mutableStateMapOf<TutorialTarget, Rect>() }
     val settingsScrollState = rememberScrollState()
@@ -207,6 +224,54 @@ fun AppRoot(viewModel: TrackerViewModel, requiredPermissions: List<String>) {
         )
     }
 
+    if (shouldShowReviewPrompt && !showTutorial) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissReviewPrompt() },
+            title = { Text("Enjoying PlaneTracker?") },
+            text = { Text("If you like the app, a quick rating helps a lot.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.dismissReviewPrompt()
+                    val activity = context.findActivity()
+                    val packageName = context.packageName
+                    fun openPlayStoreListing() {
+                        val intent = try {
+                            Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName"))
+                        } catch (e: Exception) {
+                            Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$packageName"))
+                        }
+                        try {
+                            context.startActivity(intent)
+                        } catch (e: android.content.ActivityNotFoundException) {
+                            context.startActivity(
+                                Intent(
+                                    Intent.ACTION_VIEW,
+                                    Uri.parse("https://play.google.com/store/apps/details?id=$packageName"),
+                                )
+                            )
+                        }
+                    }
+                    if (activity == null) {
+                        openPlayStoreListing()
+                    } else {
+                        val reviewManager = ReviewManagerFactory.create(context)
+                        reviewManager.requestReviewFlow().addOnCompleteListener { request ->
+                            if (request.isSuccessful) {
+                                reviewManager.launchReviewFlow(activity, request.result)
+                            } else {
+                                // Google's in-app review flow is unavailable — fall back to the Play Store listing.
+                                openPlayStoreListing()
+                            }
+                        }
+                    }
+                }) { Text("Rate it") }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissReviewPrompt() }) { Text("Not now") }
+            },
+        )
+    }
+
     Box(Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
@@ -235,6 +300,9 @@ fun AppRoot(viewModel: TrackerViewModel, requiredPermissions: List<String>) {
                         }
                     },
                     actions = {
+                        IconButton(onClick = { shareApp(context) }) {
+                            Icon(Icons.Filled.Share, contentDescription = "Share this app")
+                        }
                         if (currentTab == Tab.HISTORY && state.history.isNotEmpty()) {
                             IconButton(onClick = { showClearConfirm = true }) {
                                 Icon(Icons.Filled.DeleteForever, contentDescription = "Clear history")
@@ -293,15 +361,48 @@ fun AppRoot(viewModel: TrackerViewModel, requiredPermissions: List<String>) {
         ) { padding ->
             val modifier = Modifier.fillMaxSize().padding(padding)
             when (currentTab) {
-                Tab.LIVE -> LiveScreen(state, modifier)
-                Tab.MAP -> MapScreen(state, modifier)
-                Tab.HISTORY -> HistoryScreen(state, modifier)
+                Tab.LIVE -> LiveScreen(
+                    state, settings, showOnlyNotifyMatches,
+                    onShowOnlyNotifyMatchesChange = { showOnlyNotifyMatches = it },
+                    onAircraftClick = { ac -> selectedAircraftIcao = ac.icao },
+                    modifier = modifier,
+                )
+                Tab.MAP -> MapScreen(
+                    state, settings, showOnlyNotifyMatches,
+                    onShowOnlyNotifyMatchesChange = { showOnlyNotifyMatches = it },
+                    onAircraftClick = { ac -> selectedAircraftIcao = ac.icao },
+                    modifier = modifier,
+                )
+                Tab.HISTORY -> HistoryScreen(
+                    state, settings, showOnlyNotifyMatches,
+                    onShowOnlyNotifyMatchesChange = { showOnlyNotifyMatches = it },
+                    modifier = modifier,
+                )
                 Tab.SETTINGS -> SettingsScreen(
                     settings, viewModel, modifier, settingsScrollState,
                     onNotificationsSectionPositioned = { rect ->
                         tutorialTargets[TutorialTarget.NOTIFICATIONS_SECTION] = rect
                     },
                 )
+            }
+        }
+
+        val selectedAircraft: Aircraft? = selectedAircraftIcao?.let { icao -> state.active.find { it.icao == icao } }
+        val dialogLat = state.centerLat
+        val dialogLon = state.centerLon
+        if (selectedAircraft != null && dialogLat != null && dialogLon != null) {
+            FlightDetailDialog(
+                aircraft = selectedAircraft,
+                centerLat = dialogLat,
+                centerLon = dialogLon,
+                radiusNm = state.radiusNm,
+                onDismiss = { selectedAircraftIcao = null },
+            )
+        }
+        // Auto-dismiss if the aircraft left the active set (out of range) while the dialog was open.
+        LaunchedEffect(selectedAircraftIcao, state.active) {
+            if (selectedAircraftIcao != null && selectedAircraft == null) {
+                selectedAircraftIcao = null
             }
         }
 

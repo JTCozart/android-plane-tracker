@@ -35,6 +35,23 @@ data class Aircraft(
         return sqrt(dlat * dlat + dlon * dlon)
     }
 
+    /**
+     * Dead-reckoned (lat, lon) at [atMillis], extrapolated in a straight line from the last
+     * known fix using current heading/speed. Lets the UI animate smoothly between polls
+     * instead of only jumping on each fetch; extrapolation is capped at [maxSeconds] so a
+     * stale fix (aircraft out of range, poll failing) doesn't drift indefinitely.
+     */
+    fun interpolatedPosition(atMillis: Long = System.currentTimeMillis(), maxSeconds: Int = 120): Pair<Float, Float> {
+        if (groundSpeed < 5.0f) return latitude to longitude
+
+        val dtSeconds = ((atMillis - positionTimestamp) / 1000).coerceIn(0, maxSeconds.toLong()).toFloat()
+        val trackRad = trackDegrees * DEG2RAD
+        val speedNmPerSec = groundSpeed / 3600.0f
+        val dLat = cos(trackRad) * speedNmPerSec * dtSeconds / NM_PER_DEG_LAT
+        val dLon = sin(trackRad) * speedNmPerSec * dtSeconds / (NM_PER_DEG_LAT * cos(latitude * DEG2RAD))
+        return (latitude + dLat) to (longitude + dLon)
+    }
+
     /** Bearing in degrees from a fixed point to this aircraft (0=N, 90=E …). */
     fun bearingDeg(queryLat: Double, queryLon: Double): Float {
         val dlon = (longitude - queryLon.toFloat()) * cos(queryLat.toFloat() * DEG2RAD)
@@ -81,6 +98,33 @@ data class Aircraft(
         if (rawEta < 0) return -1
         val elapsed = ((System.currentTimeMillis() - positionTimestamp) / 1000).toInt()
         return maxOf(0, rawEta - elapsed)
+    }
+
+    /**
+     * Straight-line projected ground track (lat, lon pairs, starting with the current
+     * position) for the next [minutes] minutes, sampled every [stepSeconds]. Ignores
+     * turns — same straight-line assumption as [etaSeconds].
+     */
+    fun projectedTrack(minutes: Int = 10, stepSeconds: Int = 15): List<Pair<Float, Float>> {
+        val points = mutableListOf(latitude to longitude)
+        if (groundSpeed < 5.0f) return points
+
+        var curLat = latitude
+        var curLon = longitude
+        val trackRad = trackDegrees * DEG2RAD
+        val speedNmPerSec = groundSpeed / 3600.0f
+
+        var sec = 0
+        while (sec < minutes * 60) {
+            val dLat = cos(trackRad) * speedNmPerSec * stepSeconds / NM_PER_DEG_LAT
+            val dLon = sin(trackRad) * speedNmPerSec * stepSeconds /
+                (NM_PER_DEG_LAT * cos(curLat * DEG2RAD))
+            curLat += dLat
+            curLon += dLon
+            points.add(curLat to curLon)
+            sec += stepSeconds
+        }
+        return points
     }
 
     /** True if the aircraft is moving toward the query point. */

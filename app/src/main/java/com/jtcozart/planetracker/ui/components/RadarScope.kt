@@ -1,11 +1,13 @@
 package com.jtcozart.planetracker.ui.components
 
+import android.graphics.Paint as AndroidPaint
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -14,16 +16,27 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.jtcozart.planetracker.model.Aircraft
 import com.jtcozart.planetracker.ui.theme.RadarGreen
 import com.jtcozart.planetracker.ui.theme.classColor
 import kotlin.math.cos
+import kotlin.math.hypot
 import kotlin.math.min
 import kotlin.math.sin
+
+/** NM radius within which a callsign label is drawn above a blip, to keep the scope readable. */
+private const val LABEL_RADIUS_NM = 5.0f
 
 /**
  * Top-down radar scope. Renders the sweep (always) and aircraft as triangles pointing
  * in their direction of travel, positioned by bearing/distance — port of the device radar view.
+ * Aircraft within [LABEL_RADIUS_NM] get a callsign label above their blip; tapping a blip
+ * (or its label) invokes [onAircraftClick].
  */
 @Composable
 fun RadarScope(
@@ -33,6 +46,7 @@ fun RadarScope(
     centerLon: Double = 0.0,
     radiusNm: Float = 5f,
     running: Boolean = true,
+    onAircraftClick: (Aircraft) -> Unit = {},
 ) {
     val transition = rememberInfiniteTransition(label = "radar")
     val animatedSweep by transition.animateFloat(
@@ -41,8 +55,36 @@ fun RadarScope(
         label = "sweep",
     )
     val sweep = if (running) animatedSweep else 0f
+    val density = LocalDensity.current
 
-    Canvas(modifier = modifier) {
+    Canvas(
+        modifier = modifier.pointerInput(aircraft, centerLat, centerLon, radiusNm) {
+            detectTapGestures { tap ->
+                val r = min(size.width, size.height) / 2f * 0.9f
+                val center = Offset(size.width / 2f, size.height / 2f)
+                val hitRadiusPx = with(density) { 28.dp.toPx() }
+
+                var closest: Aircraft? = null
+                var closestDist = Float.MAX_VALUE
+                aircraft.forEach { ac ->
+                    val (latI, lonI) = ac.interpolatedPosition()
+                    val live = ac.copy(latitude = latI, longitude = lonI)
+                    val dist = live.distanceNm(centerLat, centerLon)
+                    if (dist > radiusNm) return@forEach
+                    val bearing = live.bearingDeg(centerLat, centerLon)
+                    val rad = Math.toRadians(bearing.toDouble())
+                    val px = center.x + (sin(rad) * (dist / radiusNm) * r).toFloat()
+                    val py = center.y - (cos(rad) * (dist / radiusNm) * r).toFloat()
+                    val d = hypot((tap.x - px).toDouble(), (tap.y - py).toDouble()).toFloat()
+                    if (d < closestDist) {
+                        closestDist = d
+                        closest = ac
+                    }
+                }
+                if (closestDist < hitRadiusPx) closest?.let(onAircraftClick)
+            }
+        }
+    ) {
         val r = min(size.width, size.height) / 2f * 0.9f
         val center = Offset(size.width / 2f, size.height / 2f)
 
@@ -64,15 +106,31 @@ fun RadarScope(
             drawLine(RadarGreen, center, Offset(center.x, center.y - r), strokeWidth = 3f)
         }
 
-        // Aircraft triangles.
+        val labelPaint = AndroidPaint(AndroidPaint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.WHITE
+            textSize = with(density) { 11.sp.toPx() }
+            textAlign = AndroidPaint.Align.CENTER
+            setShadowLayer(3f, 0f, 0f, android.graphics.Color.BLACK)
+        }
+
+        // Aircraft triangles, with callsign labels for nearby ones. Positions are dead-reckoned
+        // from the last fix using speed/heading, so blips glide smoothly between polls.
+        val now = System.currentTimeMillis()
         aircraft.forEach { ac ->
-            val dist = ac.distanceNm(centerLat, centerLon)
+            val (latI, lonI) = ac.interpolatedPosition(now)
+            val live = ac.copy(latitude = latI, longitude = lonI)
+            val dist = live.distanceNm(centerLat, centerLon)
             if (dist > radiusNm) return@forEach
-            val bearing = ac.bearingDeg(centerLat, centerLon)
+            val bearing = live.bearingDeg(centerLat, centerLon)
             val rad = Math.toRadians(bearing.toDouble())
             val px = center.x + (sin(rad) * (dist / radiusNm) * r).toFloat()
             val py = center.y - (cos(rad) * (dist / radiusNm) * r).toFloat()
             drawTriangle(Offset(px, py), ac.trackDegrees, classColor(ac.classification))
+
+            if (dist <= LABEL_RADIUS_NM) {
+                val label = ac.callsign.ifEmpty { ac.registration.ifEmpty { ac.icao } }
+                drawContext.canvas.nativeCanvas.drawText(label, px, py - 22f, labelPaint)
+            }
         }
     }
 }

@@ -26,14 +26,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jtcozart.planetracker.data.Settings
 import com.jtcozart.planetracker.data.TrackerState
 import com.jtcozart.planetracker.model.AircraftClass
+import com.jtcozart.planetracker.ui.components.NotifyFilterToggle
 import com.jtcozart.planetracker.ui.openFlightTrack
 import com.jtcozart.planetracker.ui.theme.classColor
 import com.jtcozart.planetracker.ui.theme.classTextColor
 
 @Composable
-fun HistoryScreen(state: TrackerState, modifier: Modifier = Modifier) {
+fun HistoryScreen(
+    state: TrackerState,
+    settings: Settings,
+    showOnlyNotifyMatches: Boolean,
+    onShowOnlyNotifyMatchesChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     if (state.history.isEmpty()) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("No aircraft detected yet", color = MaterialTheme.colorScheme.onBackground)
@@ -41,12 +49,25 @@ fun HistoryScreen(state: TrackerState, modifier: Modifier = Modifier) {
         return
     }
 
-    val countsByClass = state.history.groupingBy { it.classification }.eachCount()
+    val history = if (showOnlyNotifyMatches) {
+        state.history.filter { settings.notifiesAircraft(it) }
+    } else {
+        state.history
+    }
+    val countsByClass = history.groupingBy { it.classification }.eachCount()
 
     LazyColumn(
         modifier = modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        item {
+            NotifyFilterToggle(
+                showOnlyNotifyMatches = showOnlyNotifyMatches,
+                onChange = onShowOnlyNotifyMatchesChange,
+                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+            )
+        }
+
         // Totals header
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -84,7 +105,7 @@ fun HistoryScreen(state: TrackerState, modifier: Modifier = Modifier) {
         }
 
         // History list
-        itemsIndexed(state.history) { _, ac ->
+        itemsIndexed(history) { _, ac ->
             val context = LocalContext.current
             Row(
                 modifier = Modifier
