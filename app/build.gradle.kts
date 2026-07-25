@@ -19,8 +19,8 @@ android {
         applicationId = "com.jtcozart.planetracker"
         minSdk = 26          // Android 8.0 — notification channels, foreground services
         targetSdk = 36
-        versionCode = 11
-        versionName = "1.0.11"
+        versionCode = 12
+        versionName = "1.0.12"
     }
 
     signingConfigs {
@@ -86,6 +86,9 @@ dependencies {
 
     // AdMob banner ads
     implementation("com.google.android.gms:play-services-ads:23.6.0")
+    // Pinned explicitly (otherwise pulled transitively by the Ads SDK) so we control its
+    // version, and so PlaneTrackerApp can initialize it manually — see AndroidManifest.xml.
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
 
     // Play In-App Review — native rating prompt, no Play Store redirect
     implementation("com.google.android.play:review-ktx:2.0.2")
