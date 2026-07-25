@@ -2,8 +2,11 @@ package com.jtcozart.planetracker.data
 
 import com.jtcozart.planetracker.model.Aircraft
 import com.jtcozart.planetracker.model.AircraftClass
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /** Immutable snapshot of everything the UI renders. Produced by the service. */
@@ -33,8 +36,15 @@ object TrackerStateHolder {
     private val _state = MutableStateFlow(TrackerState())
     val state: StateFlow<TrackerState> = _state.asStateFlow()
 
+    private val _clearHistory = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val clearHistorySignal: SharedFlow<Unit> = _clearHistory.asSharedFlow()
+
     fun update(transform: (TrackerState) -> TrackerState) {
         _state.value = transform(_state.value)
+    }
+
+    fun signalClearHistory() {
+        _clearHistory.tryEmit(Unit)
     }
 
     fun reset() {

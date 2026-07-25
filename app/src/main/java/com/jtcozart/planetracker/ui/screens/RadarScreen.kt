@@ -28,6 +28,7 @@ fun RadarScreen(state: TrackerState, modifier: Modifier = Modifier) {
             centerLat = state.centerLat ?: 0.0,
             centerLon = state.centerLon ?: 0.0,
             radiusNm = state.radiusNm,
+            running = state.running,
         )
         Text(
             "${state.active.size} overhead • ${state.radiusNm.toInt()} NM range",

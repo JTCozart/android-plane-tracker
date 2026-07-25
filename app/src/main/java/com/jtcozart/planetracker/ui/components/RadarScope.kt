@@ -32,13 +32,15 @@ fun RadarScope(
     centerLat: Double = 0.0,
     centerLon: Double = 0.0,
     radiusNm: Float = 5f,
+    running: Boolean = true,
 ) {
     val transition = rememberInfiniteTransition(label = "radar")
-    val sweep by transition.animateFloat(
+    val animatedSweep by transition.animateFloat(
         initialValue = 0f, targetValue = 360f,
         animationSpec = infiniteRepeatable(tween(3000, easing = LinearEasing)),
         label = "sweep",
     )
+    val sweep = if (running) animatedSweep else 0f
 
     Canvas(modifier = modifier) {
         val r = min(size.width, size.height) / 2f * 0.9f

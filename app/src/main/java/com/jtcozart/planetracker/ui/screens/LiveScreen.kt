@@ -2,8 +2,8 @@ package com.jtcozart.planetracker.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,59 +13,56 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.min
 import com.jtcozart.planetracker.data.TrackerState
 import com.jtcozart.planetracker.ui.components.AircraftCard
 import com.jtcozart.planetracker.ui.components.RadarScope
 
 @Composable
 fun LiveScreen(state: TrackerState, modifier: Modifier = Modifier) {
-    when {
-        !state.hasLocation -> CenterStatus("Acquiring GPS location…", modifier)
-        !state.hasActiveAircraft -> ScanningView(state, modifier)
-        else -> {
-            val lat = state.centerLat!!
-            val lon = state.centerLon!!
-            LazyColumn(
-                modifier = modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                items(state.active, key = { it.icao }) { ac ->
-                    AircraftCard(ac, lat, lon, state.radiusNm)
-                }
+    if (!state.hasLocation) {
+        CenterStatus("Acquiring GPS location…", modifier)
+        return
+    }
+
+    val lat = state.centerLat!!
+    val lon = state.centerLon!!
+    val config = LocalConfiguration.current
+    val radarSize = min(
+        config.screenWidthDp.dp - 32.dp,
+        config.screenHeightDp.dp * 0.55f,
+    )
+
+    LazyColumn(
+        modifier = modifier.padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item {
+            Box(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+            RadarScope(
+                modifier = Modifier.size(radarSize),
+                aircraft = state.active,
+                centerLat = lat,
+                centerLon = lon,
+                radiusNm = state.radiusNm,
+                running = state.running,
+            )
             }
         }
-    }
-}
-
-@Composable
-private fun ScanningView(state: TrackerState, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.fillMaxSize().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            RadarScope(modifier = Modifier.size(240.dp))
+        item {
+            Text(
+                "${state.active.size} overhead • ${state.radiusNm.toInt()} NM range",
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+            )
         }
-        val label = if (state.consecutiveFailures > 0) {
-            "LOST CONNECTION (${state.consecutiveFailures})"
-        } else {
-            "SCANNING"
+        items(state.active, key = { it.icao }) { ac ->
+            AircraftCard(ac, lat, lon, state.radiusNm)
         }
-        Text(
-            label,
-            color = MaterialTheme.colorScheme.primary,
-            fontSize = 22.sp,
-            modifier = Modifier.padding(top = 24.dp),
-        )
-        Text(
-            "No aircraft within ${state.radiusNm.toInt()} NM",
-            color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 14.sp,
-        )
     }
 }
 

@@ -3,6 +3,8 @@ package com.jtcozart.planetracker.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.jtcozart.planetracker.data.HistoryRepository
+import com.jtcozart.planetracker.data.OnboardingRepository
 import com.jtcozart.planetracker.data.Settings
 import com.jtcozart.planetracker.data.SettingsRepository
 import com.jtcozart.planetracker.data.TrackerState
@@ -17,6 +19,8 @@ import kotlinx.coroutines.launch
 class TrackerViewModel(app: Application) : AndroidViewModel(app) {
 
     private val settingsRepo = SettingsRepository(app)
+    private val historyRepo = HistoryRepository(app)
+    private val onboardingRepo = OnboardingRepository(app)
     private val notifier = Notifier(app)
 
     val state: StateFlow<TrackerState> = TrackerStateHolder.state
@@ -27,14 +31,30 @@ class TrackerViewModel(app: Application) : AndroidViewModel(app) {
         initialValue = Settings(),
     )
 
+    val tutorialCompleted: StateFlow<Boolean> = onboardingRepo.tutorialCompleted.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = true,
+    )
+
     fun updateSettings(transform: (Settings) -> Settings) {
         viewModelScope.launch { settingsRepo.update(transform) }
+    }
+
+    fun completeTutorial() {
+        viewModelScope.launch { onboardingRepo.setTutorialCompleted() }
     }
 
     fun startTracking() = TrackingService.start(getApplication())
     fun stopTracking() = TrackingService.stop(getApplication())
 
     fun toggleLocationLock() = TrackerStateHolder.update { it.copy(locationLocked = !it.locationLocked) }
+
+    fun clearHistory() {
+        viewModelScope.launch { historyRepo.clear() }
+        TrackerStateHolder.update { it.copy(history = emptyList(), counts = com.jtcozart.planetracker.model.AircraftClass.entries.associateWith { 0 }) }
+        TrackerStateHolder.signalClearHistory()
+    }
 
     fun sendTestNotification() = notifier.sendTest()
 }

@@ -9,7 +9,9 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jtcozart.planetracker.ui.AppRoot
 import com.jtcozart.planetracker.ui.TrackerViewModel
 import com.jtcozart.planetracker.ui.theme.PlaneTrackerTheme
@@ -21,7 +23,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            PlaneTrackerTheme {
+            val settings by viewModel.settings.collectAsStateWithLifecycle()
+            PlaneTrackerTheme(themeMode = settings.themeMode) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

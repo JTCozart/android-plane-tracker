@@ -21,6 +21,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PlaneTracker">
 
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3077095730465025~8368672073" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

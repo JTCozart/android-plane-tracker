@@ -6,6 +6,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import com.jtcozart.planetracker.data.ThemeMode
 import com.jtcozart.planetracker.model.AircraftClass
 
 // Class colors match the firmware display palette.
@@ -37,9 +38,14 @@ private val DarkColors = darkColorScheme(
 private val LightColors = lightColorScheme(primary = Color(0xFF1B5E20))
 
 @Composable
-fun PlaneTrackerTheme(content: @Composable () -> Unit) {
+fun PlaneTrackerTheme(themeMode: ThemeMode = ThemeMode.SYSTEM, content: @Composable () -> Unit) {
+    val darkTheme = when (themeMode) {
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        ThemeMode.DARK -> true
+        ThemeMode.LIGHT -> false
+    }
     MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors,
+        colorScheme = if (darkTheme) DarkColors else LightColors,
         content = content
     )
 }

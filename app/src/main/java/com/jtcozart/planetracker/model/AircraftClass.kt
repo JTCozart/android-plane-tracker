@@ -11,15 +11,59 @@ enum class AircraftClass(val displayName: String, val tag: String) {
     PRIVATE("PRIVATE", "PRIV");
 
     companion object {
-        // FAA LIFEGUARD prefix is a regulated designation — safe to match on callsign.
-        // All other classification comes from the API's own fields.
-        private val MEDVAC_CS = listOf(
-            "LIFEGRD", "MEDVAC", "AIRLIFE", "REACH", "LIFEFLT"
+        // Callsign prefixes — all uppercase, matched with startsWith.
+        private val MEDEVAC_CALLSIGN_PREFIXES = listOf(
+            "LIFEGRD",  // FAA LIFEGUARD (regulated designation)
+            "MEDVAC",   // generic medevac callsign
+            "MEDIC",    // very common EMS helicopter prefix
+            "AIRLIFE",  // Air Life
+            "AIRMED",   // AirMed
+            "REACH",    // REACH Air Medical
+            "LIFEFLT",  // LifeFlight
+            "MERCY",    // Mercy Air / Mercy Flight
+            "CAREFLT",  // CareFlight
+            "STAT",     // STAT MedEvac
+            "ANGEL",    // Angel MedFlight
+            "RESCUE",   // Air rescue services
         )
-        private val MEDVAC_OP = listOf(
-            "AIR LIFE", "AIR METHODS", "PHI AIR", "METRO AVIA",
-            "OMNIFLIGHT", "GUARDIAN FL", "LIFE FLIGHT", "LIFEFLIGHT",
-            "AIR EVAC", "REACH AIR", "EMS"
+
+        // Operator name substrings — all uppercase, matched with contains.
+        // Keep entries specific enough to avoid false positives on common words.
+        private val MEDEVAC_OPERATOR_SUBSTRINGS = listOf(
+            "LIFEFLIGHT",
+            "LIFE FLIGHT",
+            "LIFEGUARD",
+            "LIFE GUARD",
+            "MEDEVAC",
+            "MEDIVAC",
+            "MEDVAC",
+            "AIR AMBULANCE",
+            "AEROMED",
+            "AIR MED",
+            "AIRMED",
+            "AIR METHODS",
+            "AIR LIFE",
+            "AIR EVAC",
+            "PHI AIR MEDICAL",
+            "REACH AIR",
+            "OMNIFLIGHT",
+            "GUARDIAN FLIGHT",
+            "GUARDIAN FL",
+            "METRO AVIATION",  // major air medical operator
+            "AIR METHODS",
+            "SURVIVAL FLIGHT",
+            "CAREFLIGHT",
+            "CARE FLIGHT",
+            "FLIGHT FOR LIFE",
+            "MERCY FLIGHT",
+            "MERCY AIR",
+            "ANGEL MEDFLIGHT",
+            "ANGEL MED",
+            "STAT MEDEVAC",
+            "EMERGENCY MEDICAL SERV",
+            "AIR RESCUE",
+            "HELICOPTER EMS",
+            "HEMS",
         )
 
         /** Returns the AircraftClass for the given aircraft attributes. */
@@ -35,9 +79,9 @@ enum class AircraftClass(val displayName: String, val tag: String) {
             val upperCallsign = callsign.uppercase()
             val upperOwner = owner.uppercase()
 
-            // Medevac: FAA LIFEGUARD callsign prefix or known operator.
-            if (MEDVAC_CS.any { upperCallsign.startsWith(it) }) return MEDEVAC
-            if (MEDVAC_OP.any { upperOwner.contains(it) }) return MEDEVAC
+            // Medevac: regulated callsign prefix or known operator substring.
+            if (MEDEVAC_CALLSIGN_PREFIXES.any { upperCallsign.startsWith(it) }) return MEDEVAC
+            if (MEDEVAC_OPERATOR_SUBSTRINGS.any { upperOwner.contains(it) }) return MEDEVAC
 
             // Commercial: API category A3=large, A4=high-vortex (B757), A5=heavy.
             if (category == "A3" || category == "A4" || category == "A5") return COMMERCIAL

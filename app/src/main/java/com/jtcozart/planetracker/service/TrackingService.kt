@@ -15,6 +15,7 @@ import com.jtcozart.planetracker.R
 import com.jtcozart.planetracker.data.AdsbLolSource
 import com.jtcozart.planetracker.data.AircraftStore
 import com.jtcozart.planetracker.data.FetchResult
+import com.jtcozart.planetracker.data.HistoryRepository
 import com.jtcozart.planetracker.data.Settings
 import com.jtcozart.planetracker.data.SettingsRepository
 import com.jtcozart.planetracker.data.TrackerStateHolder
@@ -23,8 +24,12 @@ import com.jtcozart.planetracker.model.AircraftClass
 import com.jtcozart.planetracker.notify.NotificationChannels
 import com.jtcozart.planetracker.notify.Notifier
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.flow.firstOrNull
 
 /**
  * Foreground service that polls adsb.lol using the phone's live location and posts
@@ -33,25 +38,51 @@ import kotlinx.coroutines.launch
 class TrackingService : LifecycleService() {
 
     private lateinit var settingsRepo: SettingsRepository
+    private lateinit var historyRepo: HistoryRepository
     private lateinit var locationProvider: LocationProvider
     private lateinit var notifier: Notifier
     private val source = AdsbLolSource()
     private val store = AircraftStore()
 
     private val currentSettings = MutableStateFlow(Settings())
+    private val refreshNow = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     @Volatile private var lastLocation: Location? = null
 
     override fun onCreate() {
         super.onCreate()
         settingsRepo = SettingsRepository(applicationContext)
+        historyRepo = HistoryRepository(applicationContext)
         locationProvider = LocationProvider(applicationContext)
         notifier = Notifier(applicationContext)
 
         startForegroundCompat()
 
-        // Keep latest settings.
+        // Load persisted history into the store before polling begins.
         lifecycleScope.launch {
-            settingsRepo.settings.collect { currentSettings.value = it }
+            val saved = historyRepo.history.firstOrNull() ?: emptyList()
+            if (saved.isNotEmpty()) {
+                store.loadHistory(saved)
+                TrackerStateHolder.update { it.copy(history = store.historyAircraft) }
+            }
+        }
+
+        // Observe clear-history signal from the ViewModel.
+        lifecycleScope.launch {
+            TrackerStateHolder.clearHistorySignal.collect {
+                store.clearHistory()
+            }
+        }
+
+        // Keep latest settings; on any change push new radius to state and re-poll immediately.
+        lifecycleScope.launch {
+            var first = true
+            settingsRepo.settings.collect { settings ->
+                val prev = currentSettings.value
+                currentSettings.value = settings
+                TrackerStateHolder.update { it.copy(radiusNm = settings.radiusNm) }
+                if (!first && settings.radiusNm != prev.radiusNm) refreshNow.tryEmit(Unit)
+                first = false
+            }
         }
         // Track location — radius follows the phone. Update interval = half the poll interval.
         lifecycleScope.launch {
@@ -89,10 +120,9 @@ class TrackingService : LifecycleService() {
         while (true) {
             val settings = currentSettings.value
             val loc = lastLocation
-            if (loc != null) {
-                poll(loc, settings)
-            }
-            delay(settings.pollIntervalSec.coerceAtLeast(Settings.MIN_POLL_INTERVAL_SEC) * 1000L)
+            if (loc != null) poll(loc, settings)
+            val delayMs = settings.pollIntervalSec.coerceAtLeast(Settings.MIN_POLL_INTERVAL_SEC) * 1000L
+            withTimeoutOrNull(delayMs) { refreshNow.first() }
         }
     }
 
@@ -103,6 +133,7 @@ class TrackingService : LifecycleService() {
                 effects.newDetections.forEach { notifier.notifyDetection(it, settings) }
                 effects.emergencies.forEach { notifier.notifyEmergencySquawk(it, settings) }
                 publishState(loc, settings, result.httpCode)
+                if (effects.hasNewAircraft) historyRepo.save(store.historyAircraft)
             }
             is FetchResult.Failure -> {
                 TrackerStateHolder.update {

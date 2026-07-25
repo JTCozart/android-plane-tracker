@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,8 +27,10 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jtcozart.planetracker.data.TrackerState
+import com.jtcozart.planetracker.model.AircraftClass
 import com.jtcozart.planetracker.ui.openFlightTrack
 import com.jtcozart.planetracker.ui.theme.classColor
+import com.jtcozart.planetracker.ui.theme.classTextColor
 
 @Composable
 fun HistoryScreen(state: TrackerState, modifier: Modifier = Modifier) {
@@ -37,14 +40,55 @@ fun HistoryScreen(state: TrackerState, modifier: Modifier = Modifier) {
         }
         return
     }
+
+    val countsByClass = state.history.groupingBy { it.classification }.eachCount()
+
     LazyColumn(
         modifier = modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        itemsIndexed(state.history) { index, ac ->
+        // Totals header
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Totals",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(bottom = 4.dp),
+                )
+                AircraftClass.entries.forEach { cls ->
+                    val count = countsByClass[cls] ?: 0
+                    if (count == 0) return@forEach
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(classColor(cls))
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(cls.displayName, color = classTextColor(cls), fontWeight = FontWeight.Bold)
+                        Text("$count", color = classTextColor(cls), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+                Text(
+                    "Detected",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+                )
+            }
+        }
+
+        // History list
+        itemsIndexed(state.history) { _, ac ->
             val context = LocalContext.current
             Row(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
                     .clickable { openFlightTrack(context, ac.icao) }
                     .padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,

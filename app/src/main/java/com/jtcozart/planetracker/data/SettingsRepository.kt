@@ -33,6 +33,7 @@ class SettingsRepository(private val context: Context) {
             p[K_NOTIFY_PRIV] = next.notifyPrivate
             p[K_NOTIFY_POI] = next.notifyPoi
             p[K_NOTIFY_EMERG] = next.notifyEmergencySquawk
+            p[K_THEME_MODE] = next.themeMode.name
         }
     }
 
@@ -48,6 +49,7 @@ class SettingsRepository(private val context: Context) {
         notifyPrivate = this[K_NOTIFY_PRIV] ?: true,
         notifyPoi = this[K_NOTIFY_POI] ?: false,
         notifyEmergencySquawk = this[K_NOTIFY_EMERG] ?: true,
+        themeMode = this[K_THEME_MODE]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.SYSTEM,
     )
 
     private companion object {
@@ -62,5 +64,6 @@ class SettingsRepository(private val context: Context) {
         val K_NOTIFY_PRIV = booleanPreferencesKey("notify_private")
         val K_NOTIFY_POI = booleanPreferencesKey("notify_poi")
         val K_NOTIFY_EMERG = booleanPreferencesKey("notify_emergency_squawk")
+        val K_THEME_MODE = stringPreferencesKey("theme_mode")
     }
 }

@@ -127,7 +127,7 @@
 <main>
   <div class="eyebrow">Legal</div>
   <h1>Privacy Policy</h1>
-  <p class="date">Effective date: June 30, 2026</p>
+  <p class="date">Effective date: July 24, 2026</p>
 
   <section>
     <h2>Overview</h2>
@@ -141,18 +141,20 @@
 
     <p><strong style="color:#f0f0f0;">Aircraft data</strong><br/>
     The app queries <a href="https://adsb.lol" target="_blank" rel="noopener">adsb.lol</a>, a free public ADS-B aggregator, with your approximate coordinates and search radius to retrieve nearby aircraft positions. The adsb.lol service may log these requests in accordance with their own privacy policy.</p>
+
+    <p><strong style="color:#f0f0f0;">Advertising</strong><br/>
+    PlaneTracker displays banner ads served by Google AdMob on the Live, Map, and History tabs. AdMob may collect your advertising ID and other identifiers to serve and measure ads, and may use this data in accordance with Google's own privacy policy. You can review or reset your advertising ID, or opt out of personalized ads, in your device's Google Settings.</p>
   </section>
 
   <section>
     <h2>Data not collected</h2>
-    <p>PlaneTracker does not collect, transmit, or store any of the following:</p>
+    <p>PlaneTracker itself does not collect, transmit, or store any of the following:</p>
     <ul style="color:#ccc; padding-left:20px; margin-top:8px;">
       <li>Personal information or account details</li>
-      <li>Device identifiers or advertising IDs</li>
       <li>Usage analytics or crash reports</li>
       <li>Any data outside your device</li>
     </ul>
-    <p style="margin-top:12px;">No account or registration is required. No analytics, crash reporting, or advertising SDKs are included.</p>
+    <p style="margin-top:12px;">No account or registration is required. No analytics or crash reporting SDKs are included. See "Advertising" above for the one third-party SDK (Google AdMob) the app does include.</p>
   </section>
 
   <section>
@@ -178,6 +180,10 @@
           <td>POST_NOTIFICATIONS</td>
           <td>Alert you when aircraft enter your radius</td>
         </tr>
+        <tr>
+          <td>com.google.android.gms.permission.AD_ID</td>
+          <td>Required by Google AdMob to serve and measure ads</td>
+        </tr>
       </tbody>
     </table>
   </section>
@@ -185,6 +191,7 @@
   <section>
     <h2>Third-party services</h2>
     <p>PlaneTracker uses <a href="https://adsb.lol" target="_blank" rel="noopener">adsb.lol</a> to retrieve aircraft data. Requests include your latitude, longitude, and search radius. Please review adsb.lol's own privacy policy for details on how they handle API requests.</p>
+    <p>PlaneTracker uses <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google AdMob</a> to display ads. Review Google's privacy policy for details on how they handle data collected through AdMob.</p>
   </section>
 
   <section>

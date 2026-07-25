@@ -13,14 +13,14 @@ val keystoreProps = Properties().also { props ->
 
 android {
     namespace = "com.jtcozart.planetracker"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.jtcozart.planetracker"
         minSdk = 26          // Android 8.0 — notification channels, foreground services
-        targetSdk = 35
-        versionCode = 3
-        versionName = "1.0.0"
+        targetSdk = 36
+        versionCode = 9
+        versionName = "1.0.9"
     }
 
     signingConfigs {
@@ -78,9 +78,14 @@ dependencies {
 
     // Location — fused provider, radius follows the phone
     implementation("com.google.android.gms:play-services-location:21.3.0")
+    // Play Console flags fragment:1.1.0 (pulled in transitively via play-services-base) as outdated
+    implementation("androidx.fragment:fragment-ktx:1.8.4")
 
     // OpenStreetMap map view (Apache-2.0, no API key)
     implementation("org.osmdroid:osmdroid-android:6.1.20")
+
+    // AdMob banner ads
+    implementation("com.google.android.gms:play-services-ads:23.6.0")
 
     // Networking for adsb.lol (JSON parsed with the built-in org.json)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

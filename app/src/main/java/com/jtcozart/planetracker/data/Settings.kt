@@ -2,6 +2,8 @@ package com.jtcozart.planetracker.data
 
 import com.jtcozart.planetracker.model.AircraftClass
 
+enum class ThemeMode { SYSTEM, DARK, LIGHT }
+
 /**
  * User-tunable settings. Replaces the firmware Config struct / NVS, minus the pieces
  * that don't apply on a phone (WiFi creds, web password, OTA, ntfy token/topic).
@@ -9,6 +11,7 @@ import com.jtcozart.planetracker.model.AircraftClass
 data class Settings(
     val radiusNm: Float = DEFAULT_RADIUS_NM,
     val pollIntervalSec: Int = DEFAULT_POLL_INTERVAL_SEC,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
 
     // POI display filter (only show these ICAO type codes)
     val poiTypes: String = "",

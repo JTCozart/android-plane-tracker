@@ -30,6 +30,17 @@ class AircraftStore {
 
     fun clearCounts() = counts.fill(0)
 
+    fun loadHistory(entries: List<Aircraft>) {
+        history.clear()
+        history.addAll(entries)
+    }
+
+    fun clearHistory() {
+        history.clear()
+        counts.fill(0)
+    }
+
+
     /**
      * Parse the adsb.lol response, update state, and return the notification-worthy effects.
      * Mirrors AircraftStore::fetch / registerNewAircraft / updateExistingAircraft.
@@ -125,7 +136,7 @@ class AircraftStore {
     }
 
     companion object {
-        const val HISTORY_MAX = 5
+        const val HISTORY_MAX = 500
 
         /** Whole-token, case-insensitive match of [type] against a CSV [poiList]. */
         fun typeMatchesPoi(type: String, poiList: String): Boolean {

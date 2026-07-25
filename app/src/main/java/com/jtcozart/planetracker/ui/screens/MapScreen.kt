@@ -1,6 +1,11 @@
 package com.jtcozart.planetracker.ui.screens
 
+import android.graphics.Bitmap
+import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Color as AndroidColor
+import android.graphics.Paint
+import android.graphics.Path as AndroidPath
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import androidx.compose.runtime.Composable
@@ -88,8 +93,9 @@ fun MapScreen(state: TrackerState, modifier: Modifier = Modifier) {
             }
 
             // Aircraft markers.
+            val density = map.resources.displayMetrics.density
             state.active.forEach { ac ->
-                map.overlays.add(aircraftMarker(map, ac) { openFlightTrack(context, ac.icao) })
+                map.overlays.add(aircraftMarker(map, ac, density) { openFlightTrack(context, ac.icao) })
             }
 
             map.invalidate()
@@ -97,11 +103,11 @@ fun MapScreen(state: TrackerState, modifier: Modifier = Modifier) {
     )
 }
 
-private fun aircraftMarker(map: MapView, ac: Aircraft, onTap: () -> Unit): Marker =
+private fun aircraftMarker(map: MapView, ac: Aircraft, density: Float, onTap: () -> Unit): Marker =
     Marker(map).apply {
         position = GeoPoint(ac.latitude.toDouble(), ac.longitude.toDouble())
         setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
-        icon = dot(classColor(ac.classification).toArgb(), 36)
+        icon = arrow(classColor(ac.classification).toArgb(), ac.trackDegrees, (56 * density).toInt())
         title = ac.callsign.ifEmpty { ac.registration.ifEmpty { ac.icao } }
         snippet = "${ac.type.ifEmpty { "???" }} • ${ac.altitude.toInt()} ft • tap to track"
         setOnMarkerClickListener { _, _ ->
@@ -118,10 +124,34 @@ private fun radiusBoundingBox(lat: Double, lon: Double, radiusNm: Float): Boundi
     return BoundingBox(lat + latDelta, lon + lonDelta, lat - latDelta, lon - lonDelta)
 }
 
-/** A filled circular marker icon in the given ARGB color. */
+/** A filled circular marker icon (used for the "You" position). */
 private fun dot(color: Int, sizePx: Int): Drawable = GradientDrawable().apply {
     shape = GradientDrawable.OVAL
     setColor(color)
     setStroke(3, AndroidColor.BLACK)
     setSize(sizePx, sizePx)
+}
+
+/** A triangle arrow pointing in the direction of [trackDegrees] (0 = north). */
+private fun arrow(color: Int, trackDegrees: Float, sizePx: Int): Drawable {
+    val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+    val canvas = AndroidCanvas(bitmap)
+    val cx = sizePx / 2f
+    val cy = sizePx / 2f
+    val r = sizePx / 2f * 0.88f
+    canvas.rotate(trackDegrees, cx, cy)
+    val path = AndroidPath().apply {
+        moveTo(cx, cy - r)                          // nose (pointing up = north)
+        lineTo(cx - r * 0.55f, cy + r * 0.7f)      // bottom-left wing
+        lineTo(cx + r * 0.55f, cy + r * 0.7f)      // bottom-right wing
+        close()
+    }
+    canvas.drawPath(path, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color })
+    canvas.drawPath(path, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        this.color = AndroidColor.BLACK
+        style = Paint.Style.STROKE
+        strokeWidth = 2.5f
+    })
+    @Suppress("DEPRECATION")
+    return BitmapDrawable(bitmap)
 }
