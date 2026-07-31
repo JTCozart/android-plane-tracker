@@ -15,8 +15,15 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,13 +33,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material3.Button
 import com.jtcozart.planetracker.data.Settings
+import com.jtcozart.planetracker.data.SpottedAircraft
+import com.jtcozart.planetracker.data.StreakState
 import com.jtcozart.planetracker.data.TrackerState
+import com.jtcozart.planetracker.model.Aircraft
 import com.jtcozart.planetracker.model.AircraftClass
 import com.jtcozart.planetracker.ui.components.NotifyFilterToggle
-import com.jtcozart.planetracker.ui.openFlightTrack
+import com.jtcozart.planetracker.ui.shareStreakCard
 import com.jtcozart.planetracker.ui.theme.classColor
 import com.jtcozart.planetracker.ui.theme.classTextColor
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+private enum class HistoryMode { TRACKED, SPOTTED }
 
 @Composable
 fun HistoryScreen(
@@ -40,10 +56,109 @@ fun HistoryScreen(
     settings: Settings,
     showOnlyNotifyMatches: Boolean,
     onShowOnlyNotifyMatchesChange: (Boolean) -> Unit,
+    spotted: List<SpottedAircraft> = emptyList(),
+    streak: StreakState = StreakState(),
+    onAircraftClick: (Aircraft) -> Unit = {},
+    onSpottedClick: (String) -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    var mode by remember { mutableStateOf(HistoryMode.TRACKED) }
+
+    Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+            SegmentedButton(
+                selected = mode == HistoryMode.TRACKED,
+                onClick = { mode = HistoryMode.TRACKED },
+                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+            ) { Text("Tracked") }
+            SegmentedButton(
+                selected = mode == HistoryMode.SPOTTED,
+                onClick = { mode = HistoryMode.SPOTTED },
+                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+            ) { Text("Spotted (${spotted.size})") }
+        }
+
+        if (mode == HistoryMode.SPOTTED) {
+            SpottedList(spotted, streak, onSpottedClick, Modifier.fillMaxSize())
+        } else {
+            TrackedHistory(state, settings, showOnlyNotifyMatches, onShowOnlyNotifyMatchesChange, onAircraftClick, Modifier.fillMaxSize())
+        }
+    }
+}
+
+@Composable
+private fun SpottedList(
+    spotted: List<SpottedAircraft>,
+    streak: StreakState,
+    onSpottedClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+
+    if (spotted.isEmpty()) {
+        Box(modifier, contentAlignment = Alignment.Center) {
+            Text(
+                "Nothing spotted yet — tap \"I spotted this!\" on a flight's details to log it here.",
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+        }
+        return
+    }
+    val dateFormat = remember { SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()) }
+    LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (streak.currentStreak > 0) {
+            item {
+                Button(
+                    onClick = { shareStreakCard(context, streak, spotted) },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                ) {
+                    Text("Share my streak")
+                }
+            }
+        }
+        itemsIndexed(spotted) { _, s ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onSpottedClick(s.icao) }
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Box(
+                    modifier = Modifier.size(16.dp).clip(CircleShape)
+                        .background(classColor(s.classification))
+                )
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        s.callsign.ifEmpty { s.registration.ifEmpty { s.icao } },
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.Bold,
+                        textDecoration = TextDecoration.Underline,
+                    )
+                    Text(
+                        "${s.type.ifEmpty { "???" }} • ${s.classification.displayName} • ${dateFormat.format(Date(s.spottedTimestamp))}",
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                        fontSize = 13.sp,
+                        fontFamily = FontFamily.Monospace,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TrackedHistory(
+    state: TrackerState,
+    settings: Settings,
+    showOnlyNotifyMatches: Boolean,
+    onShowOnlyNotifyMatchesChange: (Boolean) -> Unit,
+    onAircraftClick: (Aircraft) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (state.history.isEmpty()) {
-        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(modifier, contentAlignment = Alignment.Center) {
             Text("No aircraft detected yet", color = MaterialTheme.colorScheme.onBackground)
         }
         return
@@ -57,7 +172,7 @@ fun HistoryScreen(
     val countsByClass = history.groupingBy { it.classification }.eachCount()
 
     LazyColumn(
-        modifier = modifier.fillMaxSize().padding(16.dp),
+        modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item {
@@ -106,11 +221,10 @@ fun HistoryScreen(
 
         // History list
         itemsIndexed(history) { _, ac ->
-            val context = LocalContext.current
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { openFlightTrack(context, ac.icao) }
+                    .clickable { onAircraftClick(ac) }
                     .padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),

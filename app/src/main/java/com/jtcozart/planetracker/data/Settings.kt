@@ -14,9 +14,8 @@ data class Settings(
     val pollIntervalSec: Int = DEFAULT_POLL_INTERVAL_SEC,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
 
-    // POI display filter (only show these ICAO type codes)
+    // POI alerting (page me for these ICAO type codes regardless of class filters)
     val poiTypes: String = "",
-    val poiEnabled: Boolean = false,
 
     // Notification categories (mirror the firmware's ntfy categories)
     val notificationsEnabled: Boolean = true,
@@ -24,10 +23,10 @@ data class Settings(
     val notifyMedevac: Boolean = true,
     val notifyCommercial: Boolean = true,
     val notifyPrivate: Boolean = true,
-    val notifyPoi: Boolean = false,             // overrides class filter when POI display is active
+    val notifyPoi: Boolean = false,             // overrides class filter when POI alerting is active
     val notifyEmergencySquawk: Boolean = true,
+    val notifyStreakReminder: Boolean = true,
 ) {
-    val poiDisplayActive: Boolean get() = poiEnabled && poiTypes.isNotBlank()
     val poiNotifyActive: Boolean get() = notifyPoi && poiTypes.isNotBlank()
 
     /** Whether a detection of this class should fire a notification. */

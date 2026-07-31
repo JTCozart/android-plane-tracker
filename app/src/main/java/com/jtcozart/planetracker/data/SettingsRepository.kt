@@ -25,7 +25,6 @@ class SettingsRepository(private val context: Context) {
             p[K_RADIUS] = next.radiusNm
             p[K_POLL] = next.pollIntervalSec.coerceAtLeast(Settings.MIN_POLL_INTERVAL_SEC)
             p[K_POI_TYPES] = next.poiTypes
-            p[K_POI_ENABLED] = next.poiEnabled
             p[K_NOTIFY] = next.notificationsEnabled
             p[K_NOTIFY_MIL] = next.notifyMilitary
             p[K_NOTIFY_MED] = next.notifyMedevac
@@ -33,6 +32,7 @@ class SettingsRepository(private val context: Context) {
             p[K_NOTIFY_PRIV] = next.notifyPrivate
             p[K_NOTIFY_POI] = next.notifyPoi
             p[K_NOTIFY_EMERG] = next.notifyEmergencySquawk
+            p[K_NOTIFY_STREAK] = next.notifyStreakReminder
             p[K_THEME_MODE] = next.themeMode.name
         }
     }
@@ -41,7 +41,6 @@ class SettingsRepository(private val context: Context) {
         radiusNm = this[K_RADIUS] ?: Settings.DEFAULT_RADIUS_NM,
         pollIntervalSec = this[K_POLL] ?: Settings.DEFAULT_POLL_INTERVAL_SEC,
         poiTypes = this[K_POI_TYPES] ?: "",
-        poiEnabled = this[K_POI_ENABLED] ?: false,
         notificationsEnabled = this[K_NOTIFY] ?: true,
         notifyMilitary = this[K_NOTIFY_MIL] ?: true,
         notifyMedevac = this[K_NOTIFY_MED] ?: true,
@@ -49,6 +48,7 @@ class SettingsRepository(private val context: Context) {
         notifyPrivate = this[K_NOTIFY_PRIV] ?: true,
         notifyPoi = this[K_NOTIFY_POI] ?: false,
         notifyEmergencySquawk = this[K_NOTIFY_EMERG] ?: true,
+        notifyStreakReminder = this[K_NOTIFY_STREAK] ?: true,
         themeMode = this[K_THEME_MODE]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.SYSTEM,
     )
 
@@ -56,7 +56,6 @@ class SettingsRepository(private val context: Context) {
         val K_RADIUS = floatPreferencesKey("radius_nm")
         val K_POLL = intPreferencesKey("poll_interval_sec")
         val K_POI_TYPES = stringPreferencesKey("poi_types")
-        val K_POI_ENABLED = booleanPreferencesKey("poi_enabled")
         val K_NOTIFY = booleanPreferencesKey("notifications_enabled")
         val K_NOTIFY_MIL = booleanPreferencesKey("notify_military")
         val K_NOTIFY_MED = booleanPreferencesKey("notify_medevac")
@@ -64,6 +63,7 @@ class SettingsRepository(private val context: Context) {
         val K_NOTIFY_PRIV = booleanPreferencesKey("notify_private")
         val K_NOTIFY_POI = booleanPreferencesKey("notify_poi")
         val K_NOTIFY_EMERG = booleanPreferencesKey("notify_emergency_squawk")
+        val K_NOTIFY_STREAK = booleanPreferencesKey("notify_streak_reminder")
         val K_THEME_MODE = stringPreferencesKey("theme_mode")
     }
 }

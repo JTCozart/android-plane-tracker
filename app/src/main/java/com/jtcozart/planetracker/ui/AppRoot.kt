@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.PlayArrow
@@ -82,8 +83,11 @@ import com.jtcozart.planetracker.ui.screens.HistoryScreen
 import com.jtcozart.planetracker.ui.screens.LiveScreen
 import com.jtcozart.planetracker.ui.screens.MapScreen
 import com.jtcozart.planetracker.ui.screens.SettingsScreen
+import com.jtcozart.planetracker.ui.theme.PrivateColor
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 private tailrec fun android.content.Context.findActivity(): Activity? = when (this) {
     is Activity -> this
@@ -156,12 +160,19 @@ private val TUTORIAL_STEPS = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppRoot(viewModel: TrackerViewModel, requiredPermissions: List<String>) {
+fun AppRoot(
+    viewModel: TrackerViewModel,
+    requiredPermissions: List<String>,
+    pendingIcao: String? = null,
+    onPendingIcaoConsumed: () -> Unit = {},
+) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val tutorialCompleted by viewModel.tutorialCompleted.collectAsStateWithLifecycle()
     val shouldShowReviewPrompt by viewModel.shouldShowReviewPrompt.collectAsStateWithLifecycle()
+    val streak by viewModel.streak.collectAsStateWithLifecycle()
+    val spotted by viewModel.spotted.collectAsStateWithLifecycle()
 
     fun hasLocation() = ContextCompat.checkSelfPermission(
         context, android.Manifest.permission.ACCESS_FINE_LOCATION
@@ -172,6 +183,7 @@ fun AppRoot(viewModel: TrackerViewModel, requiredPermissions: List<String>) {
     var showClearConfirm by remember { mutableStateOf(false) }
     var showOnlyNotifyMatches by remember { mutableStateOf(false) }
     var selectedAircraftIcao by remember { mutableStateOf<String?>(null) }
+    var showFlightNotFound by remember { mutableStateOf(false) }
     var tutorialStepIndex by remember { mutableStateOf(0) }
     val tutorialTargets = remember { mutableStateMapOf<TutorialTarget, Rect>() }
     val settingsScrollState = rememberScrollState()
@@ -192,6 +204,13 @@ fun AppRoot(viewModel: TrackerViewModel, requiredPermissions: List<String>) {
 
     LaunchedEffect(Unit) {
         if (!viewModel.state.value.running) viewModel.startTracking()
+    }
+
+    LaunchedEffect(pendingIcao) {
+        if (pendingIcao != null) {
+            selectedAircraftIcao = pendingIcao
+            onPendingIcaoConsumed()
+        }
     }
 
     val showTutorial = !tutorialCompleted
@@ -297,6 +316,24 @@ fun AppRoot(viewModel: TrackerViewModel, requiredPermissions: List<String>) {
                                     )
                                 }
                             }
+                            if (streak.currentStreak > 0) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    Icon(
+                                        Icons.Filled.LocalFireDepartment,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(12.dp),
+                                        tint = if (streak.securedToday) PrivateColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Text(
+                                        "${streak.currentStreak} day streak",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = if (streak.securedToday) PrivateColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
                         }
                     },
                     actions = {
@@ -376,6 +413,10 @@ fun AppRoot(viewModel: TrackerViewModel, requiredPermissions: List<String>) {
                 Tab.HISTORY -> HistoryScreen(
                     state, settings, showOnlyNotifyMatches,
                     onShowOnlyNotifyMatchesChange = { showOnlyNotifyMatches = it },
+                    spotted = spotted,
+                    streak = streak,
+                    onAircraftClick = { ac -> selectedAircraftIcao = ac.icao },
+                    onSpottedClick = { icao -> selectedAircraftIcao = icao },
                     modifier = modifier,
                 )
                 Tab.SETTINGS -> SettingsScreen(
@@ -387,22 +428,51 @@ fun AppRoot(viewModel: TrackerViewModel, requiredPermissions: List<String>) {
             }
         }
 
-        val selectedAircraft: Aircraft? = selectedAircraftIcao?.let { icao -> state.active.find { it.icao == icao } }
-        val dialogLat = state.centerLat
-        val dialogLon = state.centerLon
-        if (selectedAircraft != null && dialogLat != null && dialogLon != null) {
+        val activeAircraft: Aircraft? = selectedAircraftIcao?.let { icao -> state.active.find { it.icao == icao } }
+        val selectedAircraft: Aircraft? = activeAircraft
+            ?: selectedAircraftIcao?.let { icao -> state.history.find { it.icao == icao } }
+        val dialogLat = state.centerLat ?: 0.0
+        val dialogLon = state.centerLon ?: 0.0
+        if (selectedAircraft != null) {
             FlightDetailDialog(
                 aircraft = selectedAircraft,
                 centerLat = dialogLat,
                 centerLon = dialogLon,
                 radiusNm = state.radiusNm,
+                inRange = activeAircraft != null,
+                alreadySpotted = spotted.any { it.icao == selectedAircraft.icao },
+                onSpot = { viewModel.markSpotted(selectedAircraft) },
                 onDismiss = { selectedAircraftIcao = null },
             )
         }
-        // Auto-dismiss if the aircraft left the active set (out of range) while the dialog was open.
-        LaunchedEffect(selectedAircraftIcao, state.active) {
-            if (selectedAircraftIcao != null && selectedAircraft == null) {
+        if (showFlightNotFound) {
+            AlertDialog(
+                onDismissRequest = { showFlightNotFound = false },
+                title = { Text("Flight not found") },
+                text = { Text("This flight is no longer being tracked and isn't in your history.") },
+                confirmButton = {
+                    TextButton(onClick = { showFlightNotFound = false }) { Text("OK") }
+                },
+            )
+        }
+        // The service loads persisted history asynchronously on cold start, so a notification tap
+        // right after launch can race the data becoming available. Wait for it (with a timeout)
+        // before concluding the flight genuinely isn't there (e.g. history was cleared).
+        LaunchedEffect(selectedAircraftIcao) {
+            val icao = selectedAircraftIcao ?: return@LaunchedEffect
+            if (viewModel.state.value.active.any { it.icao == icao } ||
+                viewModel.state.value.history.any { it.icao == icao }
+            ) {
+                return@LaunchedEffect
+            }
+            val found = withTimeoutOrNull(5000) {
+                viewModel.state.first { s ->
+                    s.active.any { it.icao == icao } || s.history.any { it.icao == icao }
+                }
+            }
+            if (found == null && selectedAircraftIcao == icao) {
                 selectedAircraftIcao = null
+                showFlightNotFound = true
             }
         }
 

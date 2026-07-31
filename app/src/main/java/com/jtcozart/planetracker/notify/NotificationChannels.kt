@@ -18,6 +18,7 @@ object NotificationChannels {
     const val PRIVATE = "ch_private"
     const val EMERGENCY = "ch_emergency"
     const val SERVICE = "ch_service"
+    const val STREAK = "ch_streak"
 
     fun channelFor(cls: AircraftClass): String = when (cls) {
         AircraftClass.MILITARY -> MILITARY
@@ -36,6 +37,9 @@ object NotificationChannels {
             NotificationChannel(PRIVATE, "Private / Other Aircraft", NotificationManager.IMPORTANCE_LOW),
             NotificationChannel(SERVICE, "Tracking Service", NotificationManager.IMPORTANCE_LOW).apply {
                 description = "Ongoing notification while PlaneTracker scans in the background"
+            },
+            NotificationChannel(STREAK, "Spotting Streak Reminders", NotificationManager.IMPORTANCE_DEFAULT).apply {
+                description = "A reminder if you haven't logged a spot yet today"
             },
         )
         nm.createNotificationChannels(channels)

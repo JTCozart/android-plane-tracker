@@ -6,6 +6,7 @@ import androidx.work.Configuration as WorkConfiguration
 import androidx.work.WorkManager
 import com.google.android.gms.ads.MobileAds
 import com.jtcozart.planetracker.notify.NotificationChannels
+import com.jtcozart.planetracker.notify.StreakReminderScheduler
 import org.osmdroid.config.Configuration
 
 class PlaneTrackerApp : Application() {
@@ -14,6 +15,7 @@ class PlaneTrackerApp : Application() {
         NotificationChannels.register(this)
         MobileAds.initialize(this)
         initWorkManager()
+        StreakReminderScheduler.schedule(this)
 
         // osmdroid needs a config + a non-default user agent before any MapView is created.
         Configuration.getInstance().apply {

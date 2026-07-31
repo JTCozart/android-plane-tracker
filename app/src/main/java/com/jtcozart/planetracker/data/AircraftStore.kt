@@ -59,12 +59,6 @@ class AircraftStore {
             if (hex.isEmpty()) continue
             val icao = hex.uppercase()
 
-            // POI display filter applies to both new arrivals and ongoing updates.
-            if (settings.poiDisplayActive) {
-                val type = entry.optString("t", "")
-                if (!typeMatchesPoi(type, settings.poiTypes)) continue
-            }
-
             seen.add(icao)
 
             val existing = active[icao]
@@ -137,11 +131,5 @@ class AircraftStore {
 
     companion object {
         const val HISTORY_MAX = 500
-
-        /** Whole-token, case-insensitive match of [type] against a CSV [poiList]. */
-        fun typeMatchesPoi(type: String, poiList: String): Boolean {
-            if (type.isEmpty() || poiList.isBlank()) return false
-            return poiList.split(',').any { it.trim().equals(type, ignoreCase = true) }
-        }
     }
 }

@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -19,11 +21,13 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,22 +55,14 @@ fun SettingsScreen(
     scrollState: ScrollState = rememberScrollState(),
     onNotificationsSectionPositioned: (Rect) -> Unit = {},
 ) {
+    var showPoiInfo by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier.fillMaxSize().verticalScroll(scrollState).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         val context = LocalContext.current
-        Button(onClick = { shareApp(context) }) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.Filled.Share, contentDescription = null)
-                Text("Share this app")
-            }
-        }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         SectionTitle("Appearance")
 
         ThemeDropdown(settings.themeMode) { mode ->
@@ -90,16 +86,36 @@ fun SettingsScreen(
             valueRange = Settings.MIN_POLL_INTERVAL_SEC.toFloat()..120f,
         )
 
-        OutlinedTextField(
-            value = settings.poiTypes,
-            onValueChange = { v -> viewModel.updateSettings { it.copy(poiTypes = v) } },
-            label = { Text("POI types") },
-            supportingText = { Text("e.g. B737,F16,C172") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-        )
-        ToggleRow("POI filter", "Show only listed types", settings.poiEnabled) { on ->
-            viewModel.updateSettings { it.copy(poiEnabled = on) }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = settings.poiTypes,
+                onValueChange = { v -> viewModel.updateSettings { it.copy(poiTypes = v) } },
+                label = { Text("POI types") },
+                supportingText = { Text("e.g. B737,F16,C172") },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+            )
+            IconButton(onClick = { showPoiInfo = true }) {
+                Icon(Icons.Filled.HelpOutline, contentDescription = "What are POI types?")
+            }
+        }
+        if (showPoiInfo) {
+            AlertDialog(
+                onDismissRequest = { showPoiInfo = false },
+                title = { Text("POI types") },
+                text = {
+                    Text(
+                        "A comma-separated list of aircraft type codes (e.g. B737,F16,C172). " +
+                            "Turn on \"POI alerts\" below to get notified any time one of these " +
+                            "types is detected, regardless of its category. " +
+                            "Use the \"Filtered matches\" toggle on the Live/Map/History tabs " +
+                            "to only display aircraft that would notify you.",
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = { showPoiInfo = false }) { Text("Got it") }
+                },
+            )
         }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -131,6 +147,20 @@ fun SettingsScreen(
             }
             ToggleRow("Emergency squawk", "7500 / 7600 / 7700", settings.notifyEmergencySquawk, settings.notificationsEnabled) { on ->
                 viewModel.updateSettings { it.copy(notifyEmergencySquawk = on) }
+            }
+            ToggleRow("Streak reminders", "Midday nudge to log today's spot", settings.notifyStreakReminder) { on ->
+                viewModel.updateSettings { it.copy(notifyStreakReminder = on) }
+            }
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        Button(onClick = { shareApp(context) }) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Filled.Share, contentDescription = null)
+                Text("Share this app")
             }
         }
     }

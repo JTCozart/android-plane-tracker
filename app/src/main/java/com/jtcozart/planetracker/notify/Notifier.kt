@@ -6,10 +6,11 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
+import com.jtcozart.planetracker.EXTRA_ICAO
+import com.jtcozart.planetracker.MainActivity
 import com.jtcozart.planetracker.R
 import com.jtcozart.planetracker.data.Settings
 import com.jtcozart.planetracker.model.Aircraft
@@ -65,6 +66,24 @@ class Notifier(private val context: Context) {
         )
     }
 
+    /** Midday nudge if the user hasn't logged a spot yet today. */
+    fun notifyStreakReminder(currentStreak: Int) {
+        if (!canPost()) return
+        val (title, body) = if (currentStreak > 0) {
+            "Keep your $currentStreak-day streak going" to "You haven't logged a spot today yet — find one to keep it alive."
+        } else {
+            "Start a spotting streak" to "Log your first spotted aircraft today to kick off a streak."
+        }
+        post(
+            channel = NotificationChannels.STREAK,
+            priority = NotificationCompat.PRIORITY_DEFAULT,
+            id = "streak_reminder".hashCode(),
+            title = title,
+            body = body,
+            icao = null,
+        )
+    }
+
     /** Test notification, equivalent to the firmware's "Send Test Notification" button. */
     fun sendTest() {
         if (!canPost()) return
@@ -103,15 +122,18 @@ class Notifier(private val context: Context) {
             .setAutoCancel(true)
         category?.let { builder.setCategory(it) }
 
+        val intent = Intent(context, MainActivity::class.java).apply {
+            action = Intent.ACTION_VIEW
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            if (icao != null) putExtra(EXTRA_ICAO, icao)
+        }
+        val pending = PendingIntent.getActivity(
+            context, icao?.hashCode() ?: id, intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        builder.setContentIntent(pending)
         if (icao != null) {
-            val url = "https://globe.adsbexchange.com/?icao=$icao"
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-            val pending = PendingIntent.getActivity(
-                context, icao.hashCode(), intent,
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-            )
-            builder.setContentIntent(pending)
-            builder.addAction(R.drawable.ic_stat_plane, "Track Flight", pending)
+            builder.addAction(R.drawable.ic_stat_plane, "View Flight", pending)
         }
 
         manager?.notify(id, builder.build())

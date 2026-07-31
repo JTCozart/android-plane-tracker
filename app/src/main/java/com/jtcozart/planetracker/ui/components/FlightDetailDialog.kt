@@ -12,23 +12,28 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.RemoveRedEye
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -55,6 +60,9 @@ fun FlightDetailDialog(
     centerLat: Double,
     centerLon: Double,
     radiusNm: Float,
+    inRange: Boolean = true,
+    alreadySpotted: Boolean = false,
+    onSpot: (() -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -85,6 +93,21 @@ fun FlightDetailDialog(
                     }
                     IconButton(onClick = onDismiss) {
                         Icon(Icons.Filled.Close, contentDescription = "Close")
+                    }
+                }
+
+                if (!inRange) {
+                    Surface(
+                        color = Color(0xFFFFF3CD),
+                        contentColor = Color(0xFF664D03),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    ) {
+                        Text(
+                            "This aircraft is no longer in range, showing its last known position.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(12.dp),
+                        )
                     }
                 }
 
@@ -130,9 +153,31 @@ fun FlightDetailDialog(
                     ProjectedPathMap(aircraft)
                 }
 
+                if (onSpot != null && inRange) {
+                    if (alreadySpotted) {
+                        OutlinedButton(
+                            onClick = {},
+                            enabled = false,
+                            colors = ButtonDefaults.outlinedButtonColors(disabledContentColor = MaterialTheme.colorScheme.primary),
+                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                        ) {
+                            Icon(Icons.Filled.RemoveRedEye, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Text("  Spotted", fontWeight = FontWeight.Bold)
+                        }
+                    } else {
+                        Button(
+                            onClick = onSpot,
+                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                        ) {
+                            Icon(Icons.Filled.RemoveRedEye, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Text("  I spotted this!", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
                 Button(
                     onClick = { openFlightTrack(context, aircraft.icao) },
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 ) {
                     Text("Track on ADS-B Exchange")
                 }
