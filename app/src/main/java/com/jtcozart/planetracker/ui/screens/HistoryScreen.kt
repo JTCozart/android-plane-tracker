@@ -137,7 +137,13 @@ private fun SpottedList(
                         textDecoration = TextDecoration.Underline,
                     )
                     Text(
-                        "${s.type.ifEmpty { "???" }} • ${s.classification.displayName} • ${dateFormat.format(Date(s.spottedTimestamp))}",
+                        "${s.type.ifEmpty { "???" }} • ${s.classification.displayName}",
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                        fontSize = 13.sp,
+                        fontFamily = FontFamily.Monospace,
+                    )
+                    Text(
+                        dateFormat.format(Date(s.spottedTimestamp)),
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                         fontSize = 13.sp,
                         fontFamily = FontFamily.Monospace,
@@ -164,6 +170,7 @@ private fun TrackedHistory(
         return
     }
 
+    val dateFormat = remember { SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()) }
     val history = if (showOnlyNotifyMatches) {
         state.history.filter { settings.notifiesAircraft(it) }
     } else {
@@ -242,6 +249,12 @@ private fun TrackedHistory(
                     )
                     Text(
                         "${ac.type.ifEmpty { "???" }} • ${ac.classification.displayName} • ${ac.altitude.toInt()} ft",
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                        fontSize = 13.sp,
+                        fontFamily = FontFamily.Monospace,
+                    )
+                    Text(
+                        dateFormat.format(Date(ac.positionTimestamp)),
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                         fontSize = 13.sp,
                         fontFamily = FontFamily.Monospace,
