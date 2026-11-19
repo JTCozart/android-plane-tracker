@@ -3,8 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PlaneTracker — Live Aircraft Radar for Android</title>
+  <title>PlaneTracker: Live Aircraft Radar for Android</title>
   <meta name="description" content="PlaneTracker shows every aircraft flying within your chosen radius using live ADS-B data. Radar scope, live map, and instant notifications." />
+  <link rel="preload" href="fonts/Manrope-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="fonts/Inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="theme.css" />
   <style>
     :root {
       --bg:       #0d0d0d;
@@ -27,31 +30,11 @@
       line-height: 1.6;
     }
 
-    /* NAV */
-    nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 18px 40px;
-      border-bottom: 1px solid #222;
-      position: sticky;
-      top: 0;
-      background: rgba(13,13,13,0.92);
-      backdrop-filter: blur(8px);
-      z-index: 100;
-    }
-    .nav-logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-      font-size: 1.1rem;
-      color: var(--green);
-      text-decoration: none;
-    }
-    .nav-logo svg { width: 26px; height: 26px; }
-    nav a { color: var(--muted); text-decoration: none; font-size: .9rem; }
-    nav a:hover { color: var(--text); }
+    
+    
+    
+    
+    
 
     /* HERO */
     .hero {
@@ -214,42 +197,39 @@
     .class-card strong { display: block; font-size: .95rem; }
     .class-card span { color: var(--muted); font-size: .82rem; }
 
-    /* FOOTER */
-    footer {
-      border-top: 1px solid #222;
-      padding: 32px 24px;
-      text-align: center;
-      color: var(--muted);
-      font-size: .85rem;
-    }
-    footer a { color: var(--muted); text-decoration: underline; }
-    footer a:hover { color: var(--green); }
-    footer p + p { margin-top: 8px; }
+    
+    
+    
+    
 
     @media (max-width: 600px) {
-      nav { padding: 14px 20px; }
+      
       .class-grid { grid-template-columns: 1fr; }
     }
   </style>
+  <link rel="stylesheet" href="site.css" />
 </head>
 <body>
 
 <!-- NAV -->
-<nav>
-  <a class="nav-logo" href="index.html">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/>
-    </svg>
-    PlaneTracker
-  </a>
-  <a href="privacy.html">Privacy Policy</a>
-</nav>
+<header class="site-header">
+  <div class="container nav">
+    <a class="brand" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg> <span>PlaneTracker</span></a>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks"><span></span><span></span><span></span></button>
+    <nav class="nav-links" id="navLinks">
+      <a href="index.html#features">Features</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://github.com/JTCozart/android-plane-tracker">Source</a>
+      <a class="nav-cta" href="https://play.google.com/store/apps/details?id=com.jtcozart.planetracker">Get it on Google Play</a>
+    </nav>
+  </div>
+</header>
 
 <!-- HERO -->
-<section class="hero">
+<section class="hero" id="top">
   <div class="hero-tag">Free &amp; Open Source</div>
   <h1>Every aircraft<br /><span>above you</span>, live.</h1>
-  <p>PlaneTracker shows aircraft flying within your chosen radius using live ADS-B data — radar scope, live map, and instant notifications, all on-device.</p>
+  <p>PlaneTracker shows aircraft flying within your chosen radius using live ADS-B data: radar scope, live map, and instant notifications, all on-device.</p>
   <div class="hero-actions">
     <a class="btn-play" href="https://play.google.com/store/apps/details?id=com.jtcozart.planetracker" id="play-link" target="_blank" rel="noopener">
       <!-- Google Play icon -->
@@ -414,7 +394,7 @@
 </section>
 
 <!-- FEATURES -->
-<section class="features">
+<section class="features" id="features">
   <h2>Everything you need. <span>Nothing you don't.</span></h2>
   <div class="grid">
     <div class="feat">
@@ -422,7 +402,7 @@
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       </div>
       <h3>Live ADS-B Data</h3>
-      <p>Polls adsb.lol every 10 seconds. No API key, no account — works out of the box.</p>
+      <p>Polls adsb.lol every 10 seconds. No API key, no account: works out of the box.</p>
     </div>
     <div class="feat">
       <div class="feat-icon">
@@ -493,7 +473,7 @@
         <div class="dot priv"></div>
         <div>
           <strong>Private / Other</strong>
-          <span>Everything else — GA, helicopter, unknown</span>
+          <span>Everything else: GA, helicopter, unknown</span>
         </div>
       </div>
     </div>
@@ -501,21 +481,66 @@
 </section>
 
 <!-- FOOTER -->
-<footer>
-  <p>
-    <a href="https://github.com/JTCozart/android-plane-tracker" target="_blank" rel="noopener">GitHub</a>
-    &nbsp;·&nbsp;
-    <a href="privacy.html">Privacy Policy</a>
-    &nbsp;·&nbsp;
-    Aircraft data from <a href="https://adsb.lol" target="_blank" rel="noopener">adsb.lol</a>
-  </p>
-  <p style="margin-top:12px;">
-    <a href="https://www.aihonestybadge.com" target="_blank" rel="noopener">
-      <img src="https://www.aihonestybadge.com/badges/ai-assisted.svg" alt="AI Assisted Badge" style="height:28px;vertical-align:middle;" />
-    </a>
-  </p>
-  <p style="margin-top:12px;">© 2026 PlaneTracker. Free and open source.</p>
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-cta">
+      <h2>See what is flying over you right now.</h2>
+      <a class="btn btn-primary" href="https://play.google.com/store/apps/details?id=com.jtcozart.planetracker">Get it on Google Play</a>
+    </div>
+
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a class="brand" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg> <span>PlaneTracker</span></a>
+        <p>Live aircraft radar for Android from ADS-B data: radar scope, live map and instant notifications, all on-device. Aircraft data from adsb.lol.</p>
+        <a href="https://www.aihonestybadge.com" target="_blank" rel="noopener"><img src="https://www.aihonestybadge.com/badges/ai-assisted.svg" alt="AI Assisted Badge" style="max-width:170px;margin-top:8px" /></a>
+      </div>
+
+      <nav class="footer-col" aria-label="PlaneTracker">
+        <h3>PlaneTracker</h3>
+        <ul>
+          <li><a href="privacy.html">Privacy Policy</a></li>
+          <li><a href="https://github.com/JTCozart/android-plane-tracker">Source on GitHub</a></li>
+          <li><a href="https://adsb.lol">adsb.lol</a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer-col" aria-label="Cozart Consulting">
+        <h3>Cozart Consulting</h3>
+        <ul>
+          <li><a href="https://cozartconsulting.com/">Custom software</a></li>
+          <li><a href="https://cozartconsulting.com/#work">More projects</a></li>
+          <li><a href="https://github.com/JTCozart">GitHub</a></li>
+          <li><a href="https://cozartconsulting.com/#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+
+    <div class="footer-bottom">
+      <span>&copy; <span id="year">2026</span> PlaneTracker. Designed and built by <a href="https://cozartconsulting.com/">Cozart Consulting</a>, Knoxville, TN.</span>
+      <span class="theme-credit">Theme adapted from <a href="https://www.figma.com/community/file/1479561357645494407">Housefix</a> by Al Razi Siam, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</span>
+    </div>
+  </div>
 </footer>
 
+<script>
+  (function () {
+    var toggle = document.getElementById('navToggle');
+    var links = document.getElementById('navLinks');
+    if (!toggle || !links) return;
+    toggle.addEventListener('click', function () {
+      var open = links.classList.toggle('open');
+      toggle.classList.toggle('open', open);
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    links.querySelectorAll('a').forEach(function (a) {
+      a.addEventListener('click', function () {
+        links.classList.remove('open');
+        toggle.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+  })();
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
 </body>
 </html>

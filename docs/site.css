@@ -1,0 +1,58 @@
+/* App pages on the shared Cozart marketing theme (theme.css). Loaded after each page's own CSS. */
+:root {
+  --bg: var(--mk-surface);
+  --surface: var(--mk-tint);
+  --card: var(--mk-surface);
+  --green: var(--mk-primary);
+  --green-dim: var(--mk-primary-hover);
+  --text: var(--mk-text);
+  --muted: var(--mk-muted);
+  --radius: var(--mk-radius);
+}
+body { background: var(--mk-surface); color: var(--mk-text); font-family: var(--mk-font-body); }
+h1, h2, h3 { font-family: var(--mk-font-heading); color: var(--mk-navy); letter-spacing: -0.02em; }
+.brand svg { width: 28px; height: 28px; color: var(--mk-primary); }
+
+/* Hero: full-width blue band, content kept centred */
+.hero {
+  max-width: none;
+  padding: 110px 24px 90px;
+  color: #fff;
+  background:
+    radial-gradient(70% 90% at 85% 10%, rgba(33, 150, 243, 0.55), transparent 60%),
+    radial-gradient(60% 80% at 0% 100%, rgba(25, 118, 210, 0.45), transparent 60%),
+    linear-gradient(135deg, #00296c 0%, #003a91 55%, #0b5cc4 100%);
+}
+.hero > * { max-width: 860px; margin-left: auto; margin-right: auto; }
+.hero h1 { color: #fff; }
+.hero h1 span { color: #8cc8ff; }
+.hero p { color: rgba(255, 255, 255, 0.88); }
+.hero-tag { background: transparent; color: #cfe5ff; border-color: rgba(255, 255, 255, 0.35); border-radius: var(--mk-radius); letter-spacing: 0.04em; }
+.btn-play, .btn-ghost { border-radius: var(--mk-radius); font-family: var(--mk-font-heading); font-weight: 700; }
+.btn-play { background: #fff; color: var(--mk-navy); }
+.btn-play:hover { background: var(--mk-tint); }
+.hero .btn-ghost { color: #fff; border-color: rgba(255, 255, 255, 0.7); }
+.hero .btn-ghost:hover { background: #fff; color: var(--mk-navy); border-color: #fff; }
+
+/* Content */
+.screenshots { padding: 70px 24px; }
+.phone { filter: drop-shadow(0 20px 40px rgba(0, 41, 108, 0.18)); }
+.features { padding-top: 40px; padding-bottom: 100px; }
+.features h2, .heatmap-inner h2, .classes h2 { font-size: clamp(1.8rem, 3.6vw, 2.5rem); }
+.features h2 span, .heatmap-inner h2 span, .classes h2 span { color: var(--mk-primary); }
+.feat { background: var(--mk-tint); border: 0; border-bottom: 3px solid transparent; transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.15s; }
+.feat:hover { background: var(--mk-surface); border-bottom-color: var(--mk-primary-bright); box-shadow: var(--mk-shadow-hover); transform: translateY(-3px); }
+.feat-icon { width: 48px; height: 48px; background: var(--mk-primary); border-radius: var(--mk-radius); }
+.feat-icon svg { stroke: #fff; }
+.feat h3 { font-size: 1.1rem; }
+.heatmap-section, .classes { padding: 100px 24px; }
+.legend-card, .class-card { box-shadow: var(--mk-shadow); }
+
+/* Privacy page */
+main > .eyebrow { background: none; border: 0; padding: 0; color: var(--mk-primary); font-family: var(--mk-font-heading); font-size: 1.05rem; font-weight: 600; letter-spacing: 0; text-transform: none; }
+main h2, main h3, main h4 { color: var(--mk-navy); }
+main strong { color: var(--mk-ink); }
+main p, main li { color: var(--mk-text); }
+main th { background: var(--mk-tint); color: var(--mk-navy); }
+main td { border-color: var(--mk-border); }
+.site-footer p { color: var(--mk-on-dark-muted); }
